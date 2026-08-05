@@ -1,0 +1,19 @@
+server:
+  port: 8761   # conventional Eureka port
+
+spring:
+  application:
+    name: discovery-server
+
+eureka:
+  client:
+    # This IS the registry, so it must not try to register with itself
+    # or fetch a registry from anyone else.
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

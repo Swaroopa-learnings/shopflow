@@ -1,0 +1,29 @@
+# PROD PROFILE: Postgres + explicitly tuned HikariCP.
+#
+# HIKARICP is Spring Boot's default JDBC CONNECTION POOL - opening a DB
+# connection costs a TCP handshake + auth (tens of ms), so connections are
+# created once and leased to requests. Hikari is the default because it's the
+# fastest and lightest of the mainstream pools.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orderdb
+    username: shopflow
+    password: shopflow          # in real prod: env var / secret manager, never in git
+    hikari:
+      # SIZING: bigger is NOT better. Every connection = real memory + a DB
+      # backend process. Rule of thumb: pool ≈ (2 * CPU cores) on the DB side;
+      # measure before raising. Too-large pools cause DB-side contention.
+      maximum-pool-size: 10
+      minimum-idle: 2           # keep a couple warm for burst starts
+      connection-timeout: 3000  # ms a request waits for a free connection before failing
+                                #  fast-fail beats queueing forever under load
+      idle-timeout: 600000      # 10 min: surplus idle connections are retired
+      max-lifetime: 1800000     # 30 min: recycle connections before DB/firewall kills them
+      leak-detection-threshold: 60000  # log a warning + stacktrace if a connection
+                                       # is held >60s - finds "forgot to close" bugs
+      pool-name: order-hikari   # named pool -> named metrics in /actuator/metrics
+  jpa:
+    hibernate:
+      ddl-auto: validate        # prod NEVER auto-migrates; schema is owned by
+                                # Flyway/Liquibase scripts, Hibernate only validates
+    show-sql: false

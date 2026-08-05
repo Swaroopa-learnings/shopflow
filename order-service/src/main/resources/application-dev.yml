@@ -1,0 +1,12 @@
+# DEV PROFILE (default): zero-install relational DB so a fresh clone runs.
+# H2 lives in memory - data vanishes on restart, which is perfect for demos.
+spring:
+  datasource:
+    url: jdbc:h2:mem:orderdb
+  jpa:
+    hibernate:
+      ddl-auto: create-drop   # Hibernate generates schema from @Entity classes
+    show-sql: true            # log every SQL statement (educational; noisy in prod)
+  h2:
+    console:
+      enabled: true           # web UI at http://localhost:8083/h2-console

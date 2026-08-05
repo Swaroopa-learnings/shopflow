@@ -1,0 +1,12 @@
+# STRICT mTLS: every service-to-service call inside the shopflow namespace is
+# mutually authenticated and encrypted by the sidecars - zero application code.
+# This is the third layer of the defense-in-depth story (gateway JWT check,
+# per-service JWT validation, and now transport-level identity).
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: shopflow
+spec:
+  mtls:
+    mode: STRICT

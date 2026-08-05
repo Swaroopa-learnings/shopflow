@@ -1,0 +1,62 @@
+server:
+  port: 8080   # the ONLY port external clients ever talk to
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cloud:
+    gateway:
+      # -----------------------------------------------------------------------
+      # ROUTES: predicate (when does this route match) + URI (where to send it).
+      # "lb://<name>" = look the service up in Eureka and client-side load
+      # balance across its instances. No hardcoded hosts/ports anywhere.
+      # -----------------------------------------------------------------------
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**,/api/v2/products/**
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+          # RATE LIMITING applied to the order route: Redis token bucket.
+          # steady state 5 req/s per user, bursts up to 10 allowed.
+          # Exceeding it returns HTTP 429 with X-RateLimit-* headers.
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.requestedTokens: 1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+# Shared HMAC secret for JWT verification (mirror of auth-service).
+# In production: externalize via env var / vault, and prefer RS256 key pairs.
+app:
+  jwt:
+    secret: "change-me-shopflow-demo-secret-key-32b!"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway   # /actuator/gateway/routes shows live route table
+
+logging:
+  level:
+    com.shopflow.gateway: DEBUG

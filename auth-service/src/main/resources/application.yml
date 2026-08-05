@@ -1,0 +1,59 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service     # this is the name registered in Eureka
+  profiles:
+    # SPRING PROFILES: 'dev' is the default so a fresh clone runs with zero
+    # external DB (H2 in-memory). Start with -Dspring-boot.run.profiles=prod
+    # (or SPRING_PROFILES_ACTIVE=prod) to switch to Postgres.
+    default: dev
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+app:
+  jwt:
+    secret: "change-me-shopflow-demo-secret-key-32b!"   # must match gateway/order-service
+    expiry-minutes: 60
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+---
+# ---------------- dev profile: H2 in-memory ----------------
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:authdb
+  jpa:
+    hibernate:
+      ddl-auto: create-drop    # fine for a demo; NEVER in prod (use Flyway/Liquibase)
+  h2:
+    console:
+      enabled: true            # browse the DB at /h2-console
+
+---
+# ---------------- prod profile: Postgres + tuned HikariCP ----------------
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://localhost:5432/authdb
+    username: shopflow
+    password: shopflow
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    hibernate:
+      ddl-auto: update

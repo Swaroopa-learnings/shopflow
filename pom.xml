@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ROOT (PARENT) POM - Maven multi-module build.
+
+  WHY A MULTI-MODULE BUILD?
+  Each microservice is an independent Spring Boot application (its own jar, its own
+  port, its own database), but they share one parent so that:
+    1. Dependency versions are managed in ONE place (no version drift between services).
+    2. A single `mvn clean install` builds everything in the correct order
+       (Maven builds `common-events` first because other modules depend on it).
+
+  INTERVIEW NOTE: In a real company each service usually lives in its OWN git repo
+  and is versioned/deployed independently. A mono-repo like this is chosen here so
+  the whole showcase can be cloned and run in one shot.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Inheriting from spring-boot-starter-parent gives us:
+         - curated dependency versions (the Spring Boot BOM)
+         - sensible Maven plugin defaults (compiler release, resource filtering, etc.) -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.4</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.shopflow</groupId>
+    <artifactId>shopflow-parent</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>ShopFlow :: Parent</name>
+    <description>E-commerce microservices showcase covering Spring Boot / Spring Cloud patterns</description>
+
+    <modules>
+        <module>common-events</module>
+        <module>discovery-server</module>
+        <module>api-gateway</module>
+        <module>auth-service</module>
+        <module>product-service</module>
+        <module>order-service</module>
+        <module>inventory-service</module>
+        <module>payment-service</module>
+        <module>notification-service</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <!-- Spring Cloud release train MUST be compatible with the Boot version.
+             Boot 3.3.x pairs with Spring Cloud 2023.0.x ("Leyton").
+             Compatibility matrix: https://spring.io/projects/spring-cloud -->
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <jjwt.version>0.12.6</jjwt.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- BOM (Bill Of Materials) import: lets child modules declare Spring Cloud
+                 starters WITHOUT a version - the version comes from this one line. -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Our shared event/command classes used by every Kafka producer/consumer. -->
+            <dependency>
+                <groupId>com.shopflow</groupId>
+                <artifactId>common-events</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- JJWT: library used to create/parse JWTs in auth-service, gateway, order-service. -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <!-- Resilience4j: circuit breaker / retry annotations (payment-service). -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

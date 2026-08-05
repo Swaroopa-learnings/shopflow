@@ -1,0 +1,92 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: payment-service
+  profiles:
+    default: dev
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: com.shopflow.common.events
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+app:
+  bank:
+    # ~30% of bank calls fail -> retries usually save the order, but a burst of
+    # failures trips the breaker. Set to 1.0 to force the breaker OPEN, 0.0 for
+    # an always-happy path.
+    failure-rate: 0.3
+
+# -----------------------------------------------------------------------------
+# RESILIENCE4J - breaker + retry tuning (referenced by name from @CircuitBreaker
+# and @Retry annotations in PaymentProcessor).
+# -----------------------------------------------------------------------------
+resilience4j:
+  circuitbreaker:
+    instances:
+      bankGateway:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10             # judge health over the last 10 calls
+        minimum-number-of-calls: 5          # don't judge before 5 samples
+        failure-rate-threshold: 50          # >=50% failures -> OPEN
+        wait-duration-in-open-state: 10s    # stay OPEN 10s, then HALF_OPEN
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        register-health-indicator: true     # breaker state in /actuator/health
+  retry:
+    instances:
+      bankGateway:
+        max-attempts: 3                     # 1 original + 2 retries
+        wait-duration: 500ms
+        enable-exponential-backoff: true    # 500ms, 1s, ... spreads retry pressure
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.shopflow.payment.client.MockBankClient$BankUnavailableException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,retries
+  endpoint:
+    health:
+      show-details: always
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:paymentdb
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://localhost:5432/paymentdb
+    username: shopflow
+    password: shopflow
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    hibernate:
+      ddl-auto: update

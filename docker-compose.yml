@@ -1,0 +1,92 @@
+# =============================================================================
+# INFRASTRUCTURE for ShopFlow (the Spring services themselves run via `mvn`).
+#
+#   docker compose up -d        -> starts Postgres, MongoDB, Redis, Kafka
+#   docker compose down -v      -> stops everything and wipes data volumes
+#
+# WHY: Microservices demos die when the reader has to hand-install 4 databases.
+# One compose file makes the whole backing stack reproducible.
+# =============================================================================
+services:
+
+  # ---- Relational DB (orders, inventory, payments, users) -------------------
+  # One Postgres instance, multiple logical databases (created by the init script)
+  # to keep the demo light. In production each service owns its own DB instance /
+  # schema - "database per service" pattern - so services never share tables.
+  postgres:
+    image: postgres:16-alpine
+    container_name: shopflow-postgres
+    environment:
+      POSTGRES_USER: shopflow
+      POSTGRES_PASSWORD: shopflow
+      POSTGRES_DB: shopflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Inline config instead of a host bind-mount: avoids macOS "operation not
+    # permitted" errors when Docker Desktop lacks access to the project folder.
+    configs:
+      - source: postgres-init
+        target: /docker-entrypoint-initdb.d/init.sql
+
+  # ---- Non-relational DB (product catalog) ----------------------------------
+  # MongoDB stores the product catalog: catalog data is document-shaped
+  # (nested attributes, per-category fields) and read-heavy - a natural fit
+  # for a document store. This is the "non-relational DB integration" part.
+  mongodb:
+    image: mongo:7
+    container_name: shopflow-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  # ---- Redis ----------------------------------------------------------------
+  # Used for THREE distinct patterns in this project:
+  #   1. Distributed cache        (product-service @Cacheable)
+  #   2. API rate limiting        (api-gateway RequestRateLimiter)
+  #   3. Idempotency-key storage  (order-service IdempotencyFilter)
+  redis:
+    image: redis:7-alpine
+    container_name: shopflow-redis
+    ports:
+      - "6379:6379"
+
+  # ---- Kafka (KRaft mode - no ZooKeeper needed) -----------------------------
+  # The asynchronous backbone: saga commands/replies, the order event log
+  # (event sourcing), and notification fan-out all flow through Kafka topics.
+  # Official Apache image (Bitnami images were removed from Docker Hub in 2025).
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: shopflow-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Single-broker demo: internal topics can't have replicas > 1.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+volumes:
+  pgdata:
+  mongodata:
+
+# One logical database per service ("database per service" pattern) - services
+# must never reach into each other's tables; they talk via REST/Kafka only.
+configs:
+  postgres-init:
+    content: |
+      CREATE DATABASE authdb;
+      CREATE DATABASE orderdb;
+      CREATE DATABASE inventorydb;
+      CREATE DATABASE paymentdb;

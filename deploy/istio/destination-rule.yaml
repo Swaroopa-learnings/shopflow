@@ -1,0 +1,21 @@
+# Mesh-level circuit breaking for payment-service - compare with the
+# Resilience4j config in payment-service/src/main/resources/application.yml:
+# same idea (stop hammering a sick instance), enforced by the Envoy sidecar
+# instead of Java code, so it works for any language.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: payment-service
+  namespace: shopflow
+spec:
+  host: payment-service
+  trafficPolicy:
+    connectionPool:
+      http:
+        http1MaxPendingRequests: 50    # queue cap - beyond this, fail fast
+        maxRequestsPerConnection: 10
+    outlierDetection:                  # the "circuit breaker" of the mesh world
+      consecutive5xxErrors: 5          # 5 consecutive 5xx ...
+      interval: 10s                    # ... within a 10s window ...
+      baseEjectionTime: 30s            # ... ejects the instance for 30s
+      maxEjectionPercent: 50           # never eject more than half the pool
