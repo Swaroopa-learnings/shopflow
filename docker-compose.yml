@@ -81,12 +81,9 @@ volumes:
   pgdata:
   mongodata:
 
-# One logical database per service ("database per service" pattern) - services
-# must never reach into each other's tables; they talk via REST/Kafka only.
+# SQL lives in its own file (easier to maintain than inline YAML); compose
+# copies the content into the container - no host bind-mount involved, so no
+# macOS file-sharing permission issues.
 configs:
   postgres-init:
-    content: |
-      CREATE DATABASE authdb;
-      CREATE DATABASE orderdb;
-      CREATE DATABASE inventorydb;
-      CREATE DATABASE paymentdb;
+    file: ./deploy/postgres-init.sql

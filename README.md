@@ -87,6 +87,17 @@ sequenceDiagram
     end
 ```
 
+Each module has its own README (role, endpoints/topics, demo commands):
+[discovery-server](discovery-server/README.md) ·
+[api-gateway](api-gateway/README.md) ·
+[auth-service](auth-service/README.md) ·
+[product-service](product-service/README.md) ·
+[order-service](order-service/README.md) ·
+[inventory-service](inventory-service/README.md) ·
+[payment-service](payment-service/README.md) ·
+[notification-service](notification-service/README.md) ·
+[common-events](common-events/README.md)
+
 ---
 
 ## 📚 Concept → Code map
