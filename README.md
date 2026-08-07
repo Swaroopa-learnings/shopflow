@@ -205,47 +205,6 @@ curl -s localhost:8080/api/v1/orders/<orderId>/events  -H "Authorization: Bearer
 curl -s localhost:8080/api/v1/orders/<orderId>/rebuilt -H "Authorization: Bearer $TOKEN"
 ```
 
-### 5. Break things on purpose (the fun part)
 
-| Demo | How | What you'll see |
-|------|-----|-----------------|
-| Saga compensation | order `p-1003` with `quantity: 3` (only 2 in stock) | `CANCELLED` with "insufficient stock"; events show the path |
-| Circuit breaker | set `app.bank.failure-rate: 1.0` in payment-service, place ~6 orders | breaker `OPEN` in `localhost:8085/actuator/circuitbreakers`; instant fallbacks; orders cancelled + stock released |
-| Rate limiting | hammer `POST /orders` >10x in a second | `429 Too Many Requests` + `X-RateLimit-*` headers |
-| Validation | `"quantity": 0` or `"currency":"GBP"` | 400 with per-field errors |
-| Cache | `GET /products/p-1001` twice | "CACHE MISS" log appears only once |
-| Auth | any call without `Authorization` header | 401 from the gateway |
-| Saga timeout | stop inventory-service, place an order, wait ~10 min | fixedDelay sweep cancels the stuck order |
 
----
 
-## 🎯 Design decisions worth defending in an interview
-
-1. **Saga over 2PC** — 2PC holds locks across services and dies with its
-   coordinator; sagas use local transactions + compensations and accept
-   eventual consistency. `OrderSagaOrchestrator` documents orchestration vs
-   choreography trade-offs.
-2. **Known gap, on purpose: the dual-write problem** — `EventStoreService`
-   writes the DB and publishes to Kafka non-atomically, and its Javadoc
-   explains the production fix (transactional outbox + CDC). Owning a
-   limitation beats pretending it isn't there.
-3. **202 Accepted for order creation** — fulfillment is async; the API is
-   honest about it and hands back a pollable resource.
-4. **HS256 shared secret** — simplest thing that demonstrates JWT flow;
-   comments state why production wants RS256 + JWKS.
-5. **Snapshot + event store** instead of purist event sourcing — the
-   pragmatic hybrid most real systems run; `/rebuilt` proves the purist
-   derivation still works.
-6. **Eureka here, DNS there** — service discovery is shown with Eureka
-   because it's the Spring-native story; `deploy/istio/` explains why K8s
-   replaces it with platform primitives.
-
-## ⚠️ Deliberately out of scope
-
-Flyway migrations, OpenTelemetry tracing, Testcontainers integration tests,
-Kubernetes deployment of the services themselves, and real payment/SMTP
-integrations — all worthy, all orthogonal to the patterns being demonstrated.
-
-## License
-
-MIT — use it, fork it, learn from it.
