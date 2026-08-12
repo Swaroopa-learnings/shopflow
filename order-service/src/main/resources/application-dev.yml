@@ -2,7 +2,10 @@
 # H2 lives in memory - data vanishes on restart, which is perfect for demos.
 spring:
   datasource:
-    url: jdbc:h2:mem:orderdb
+    # DB_CLOSE_DELAY=-1: keep the in-memory DB alive for the JVM's lifetime,
+    # otherwise H2 drops it when Hikari closes the last idle connection and the
+    # service fails with "Table not found (this database is empty)".
+    url: jdbc:h2:mem:orderdb;DB_CLOSE_DELAY=-1
   jpa:
     hibernate:
       ddl-auto: create-drop   # Hibernate generates schema from @Entity classes

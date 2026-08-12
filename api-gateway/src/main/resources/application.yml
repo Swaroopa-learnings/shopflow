@@ -44,6 +44,16 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    # Register as "localhost" rather than the machine's LAN IP.
+    # On a laptop the IP changes whenever the network does (wifi <-> hotspot,
+    # new DHCP lease). Eureka would keep advertising the OLD address, and every
+    # lb:// route would fail with a 500 until the stale registration expired.
+    # For a single-machine demo, localhost is stable and always correct.
+    # (In real deployments you DO want prefer-ip-address: true, because pods and
+    # VMs have no resolvable hostnames - but then registrations are short-lived.)
+    hostname: localhost
+    prefer-ip-address: false
 
 # Shared HMAC secret for JWT verification (mirror of auth-service).
 # In production: externalize via env var / vault, and prefer RS256 key pairs.

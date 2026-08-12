@@ -14,8 +14,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -81,7 +81,7 @@ public class MaintenanceJobs {
     @Scheduled(fixedDelay = 30_000, initialDelay = 30_000)
     @Transactional
     public void cancelStaleOrders() {
-        Instant cutoff = Instant.now().minus(10, ChronoUnit.MINUTES);
+        Instant cutoff = Instant.now().minus(Duration.ofMinutes(10));
         List<OrderEntity> stale = orderRepository.findByStatusAndCreatedAtBefore(OrderStatus.PENDING, cutoff);
         stale.addAll(orderRepository.findByStatusAndCreatedAtBefore(OrderStatus.AWAITING_PAYMENT, cutoff));
 
@@ -90,7 +90,7 @@ public class MaintenanceJobs {
                     order.getId(), order.getStatus(), order.getCreatedAt());
             // Compensate defensively: releasing a non-existent reservation is a no-op.
             kafkaTemplate.send(Topics.INVENTORY_COMMANDS, order.getId().toString(),
-                    new ReleaseInventoryCommand(order.getId(), "saga timeout"));
+                    new ReleaseInventoryCommand(order.getId(),"saga timeout"));
             order.transitionTo(OrderStatus.CANCELLED);
             eventStore.appendAndPublish(order.getId(), new OrderCancelledEvent(
                     order.getId(), order.getUserId(), "saga timeout", Instant.now()));

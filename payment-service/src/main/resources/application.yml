@@ -22,6 +22,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: localhost
+    prefer-ip-address: false
 
 app:
   bank:
@@ -71,7 +74,9 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:h2:mem:paymentdb
+    # DB_CLOSE_DELAY=-1: keep the in-memory DB alive for the JVM's lifetime,
+    # otherwise H2 drops it when Hikari closes the last idle connection.
+    url: jdbc:h2:mem:paymentdb;DB_CLOSE_DELAY=-1
   jpa:
     hibernate:
       ddl-auto: create-drop

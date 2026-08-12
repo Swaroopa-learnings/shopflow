@@ -31,7 +31,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // registration + login are obviously public
                         .requestMatchers("/api/v1/auth/**", "/actuator/**", "/h2-console/**").permitAll()
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated())
+                // The H2 console renders itself inside HTML frames, but Spring Security
+                // sends "X-Frame-Options: DENY" by default (clickjacking protection),
+                // which makes the console show a blank page. sameOrigin allows framing
+                // by our own host only. Safe here because the console is dev-profile
+                // only; never relax this for a real UI.
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 

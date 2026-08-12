@@ -15,6 +15,7 @@ import com.shopflow.order.domain.OrderStatus;
 import com.shopflow.order.repo.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -55,6 +56,10 @@ import java.time.Instant;
  * because every intermediate state is an explicit, recoverable status.
  */
 @Component
+// One class-level listener consuming BOTH reply topics, with @KafkaHandler
+// methods routing by payload type - see InventoryCommandListener for why bare
+// Object parameters must be avoided here.
+@KafkaListener(topics = {Topics.INVENTORY_EVENTS, Topics.PAYMENT_EVENTS}, groupId = "order-saga")
 public class OrderSagaOrchestrator {
 
     private static final Logger log = LoggerFactory.getLogger(OrderSagaOrchestrator.class);
@@ -72,58 +77,75 @@ public class OrderSagaOrchestrator {
     }
 
     // ------------------------------------------------------------------
-    // Replies from inventory-service
+    // Saga step 1 reply: inventory-service
     // ------------------------------------------------------------------
-    @KafkaListener(topics = Topics.INVENTORY_EVENTS, groupId = "order-saga")
-    @Transactional
-    public void onInventoryReply(Object event) {
-        if (event instanceof InventoryReservedEvent reserved) {
-            orderRepository.findById(reserved.orderId()).ifPresent(order -> {
-                // Guard: only advance from the expected state (a late/duplicate
-                // reply must not resurrect a cancelled order).
-                if (order.getStatus() != OrderStatus.PENDING) {
-                    log.warn("Ignoring InventoryReserved for order {} in state {}",
-                            order.getId(), order.getStatus());
-                    return;
-                }
-                order.transitionTo(OrderStatus.AWAITING_PAYMENT);
-                // Saga step 2: charge the customer.
-                kafkaTemplate.send(Topics.PAYMENT_COMMANDS, order.getId().toString(),
-                        new ProcessPaymentCommand(order.getId(), order.getUserId(), order.getTotalAmount()));
-                log.info("Saga[{}]: inventory reserved -> requesting payment", order.getId());
-            });
 
-        } else if (event instanceof InventoryRejectedEvent rejected) {
-            // First step failed: nothing to compensate, just cancel.
-            cancelOrder(rejected.orderId(), "Inventory rejected: " + rejected.reason());
-        }
+    /** Stock reserved -> advance the saga and ask payment-service to charge. */
+    @KafkaHandler
+    @Transactional
+    public void onInventoryReserved(InventoryReservedEvent reserved) {
+        orderRepository.findById(reserved.orderId()).ifPresent(order -> {
+            // Guard: only advance from the expected state (a late/duplicate
+            // reply must not resurrect a cancelled order).
+            if (order.getStatus() != OrderStatus.PENDING) {
+                log.warn("Ignoring InventoryReserved for order {} in state {}",
+                        order.getId(), order.getStatus());
+                return;
+            }
+            order.transitionTo(OrderStatus.AWAITING_PAYMENT);
+            // Saga step 2: charge the customer.
+            kafkaTemplate.send(Topics.PAYMENT_COMMANDS, order.getId().toString(),
+                    new ProcessPaymentCommand(order.getId(), order.getUserId(), order.getTotalAmount()));
+            log.info("Saga[{}]: inventory reserved -> requesting payment", order.getId());
+        });
+    }
+
+    /** Out of stock -> first step failed, so nothing to compensate; just cancel. */
+    @KafkaHandler
+    @Transactional
+    public void onInventoryRejected(InventoryRejectedEvent rejected) {
+        cancelOrder(rejected.orderId(), "Inventory rejected: " + rejected.reason());
     }
 
     // ------------------------------------------------------------------
-    // Replies from payment-service
+    // Saga step 2 reply: payment-service
     // ------------------------------------------------------------------
-    @KafkaListener(topics = Topics.PAYMENT_EVENTS, groupId = "order-saga")
-    @Transactional
-    public void onPaymentReply(Object event) {
-        if (event instanceof PaymentCompletedEvent completed) {
-            orderRepository.findById(completed.orderId()).ifPresent(order -> {
-                if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
-                    log.warn("Ignoring PaymentCompleted for order {} in state {}",
-                            order.getId(), order.getStatus());
-                    return;
-                }
-                order.transitionTo(OrderStatus.COMPLETED);
-                eventStore.appendAndPublish(order.getId(),
-                        new OrderCompletedEvent(order.getId(), order.getUserId(), Instant.now()));
-                log.info("Saga[{}]: COMPLETED (payment ref {})", order.getId(), completed.paymentReference());
-            });
 
-        } else if (event instanceof PaymentFailedEvent failed) {
-            // COMPENSATION: payment failed AFTER stock was reserved -> release it.
-            kafkaTemplate.send(Topics.INVENTORY_COMMANDS, failed.orderId().toString(),
-                    new ReleaseInventoryCommand(failed.orderId(), "payment failed"));
-            cancelOrder(failed.orderId(), "Payment failed: " + failed.reason());
-        }
+    /** Money captured -> the happy path ends here. */
+    @KafkaHandler
+    @Transactional
+    public void onPaymentCompleted(PaymentCompletedEvent completed) {
+        orderRepository.findById(completed.orderId()).ifPresent(order -> {
+            if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+                log.warn("Ignoring PaymentCompleted for order {} in state {}",
+                        order.getId(), order.getStatus());
+                return;
+            }
+            order.transitionTo(OrderStatus.COMPLETED);
+            eventStore.appendAndPublish(order.getId(),
+                    new OrderCompletedEvent(order.getId(), order.getUserId(), Instant.now()));
+            log.info("Saga[{}]: COMPLETED (payment ref {})", order.getId(), completed.paymentReference());
+        });
+    }
+
+    /**
+     * Payment failed AFTER stock was reserved. THIS is the compensation step:
+     * the reservation is already committed in another service's database, so it
+     * cannot be rolled back - it must be explicitly undone.
+     */
+    @KafkaHandler
+    @Transactional
+    public void onPaymentFailed(PaymentFailedEvent failed) {
+        kafkaTemplate.send(Topics.INVENTORY_COMMANDS, failed.orderId().toString(),
+                new ReleaseInventoryCommand(failed.orderId(), "payment failed"));
+        cancelOrder(failed.orderId(), "Payment failed: " + failed.reason());
+    }
+
+    /** Anything unrecognized - logged loudly rather than silently dropped. */
+    @KafkaHandler(isDefault = true)
+    public void onUnknown(Object payload) {
+        log.error("Unhandled saga reply of type {} - saga will stall. Payload: {}",
+                payload == null ? "null" : payload.getClass().getName(), payload);
     }
 
     private void cancelOrder(java.util.UUID orderId, String reason) {

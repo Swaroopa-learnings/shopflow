@@ -22,6 +22,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: localhost
+    prefer-ip-address: false
 
 management:
   endpoints:
@@ -35,7 +38,12 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:h2:mem:inventorydb
+    # DB_CLOSE_DELAY=-1 keeps the in-memory database alive for the whole JVM
+    # lifetime. WITHOUT it, H2 destroys an in-memory DB the moment the LAST
+    # connection closes - and HikariCP closes idle connections after
+    # idle-timeout. The service then wakes up to "Table not found (this database
+    # is empty)" with no obvious cause. Classic dev-profile trap.
+    url: jdbc:h2:mem:inventorydb;DB_CLOSE_DELAY=-1
   jpa:
     hibernate:
       ddl-auto: create-drop

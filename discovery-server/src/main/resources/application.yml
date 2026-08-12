@@ -11,6 +11,13 @@ eureka:
     # or fetch a registry from anyone else.
     register-with-eureka: false
     fetch-registry: false
+  server:
+    # SELF-PRESERVATION: in production Eureka STOPS evicting instances when it
+    # loses too many heartbeats at once, assuming the network - not the services -
+    # is broken. Safer for real clusters, but on a laptop it means dead instances
+    # linger and the gateway keeps routing to them. Off for local development.
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 5000
 
 management:
   endpoints:
