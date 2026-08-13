@@ -13,8 +13,8 @@ import java.time.Instant;
 import java.util.Date;
 
 /**
- * Creates signed JWTs. The gateway and order-service verify them with the
- * same shared secret.
+ * This class uses the jwt libraries 
+ * to generate a JSON Web token
  */
 @Service
 public class JwtService {
