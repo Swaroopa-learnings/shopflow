@@ -4,15 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * NOTIFICATION-SERVICE - a pure event CONSUMER.
- *
- * It subscribes to the same ORDER_EVENTS stream the CQRS projection reads,
- * under its own consumer group - order-service doesn't know or care that
- * notifications exist. Adding this whole service required ZERO changes to any
- * producer: that is the decoupling payoff of event-driven architecture.
- *
- * Also demonstrates @Qualifier (choosing between multiple NotificationSender
- * beans) and @Async (fire-and-forget sending on a dedicated thread pool).
+ * Notification service: listens to the order event stream and sends email and
+ * SMS updates. It only consumes - no producer knows it exists.
  */
 @SpringBootApplication
 public class NotificationServiceApplication {

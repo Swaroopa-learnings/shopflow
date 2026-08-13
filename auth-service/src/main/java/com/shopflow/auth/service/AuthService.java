@@ -9,10 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Registration + login use-cases. Thin on purpose: auth-service should do one
- * thing (identity) and do it well.
- */
+/** Registration and login. */
 @Service
 public class AuthService {
 
@@ -20,8 +17,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    // Constructor injection (no @Autowired needed with a single constructor):
-    // dependencies are explicit, final, and easy to mock in tests.
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService) {
@@ -37,7 +32,7 @@ public class AuthService {
         }
         AppUser user = new AppUser(
                 request.email(),
-                passwordEncoder.encode(request.password()),   // BCrypt hash, never plaintext
+                passwordEncoder.encode(request.password()),
                 request.fullName());
         userRepository.save(user);
         return jwtService.generateToken(user);
@@ -46,8 +41,8 @@ public class AuthService {
     @Transactional(readOnly = true)
     public String login(LoginRequest request) {
         AppUser user = userRepository.findByEmail(request.email())
-                // Same message for "no such user" and "bad password" so an
-                // attacker can't probe which emails are registered.
+                // Same message whether the user or the password is wrong, so
+                // registered emails can't be probed.
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid credentials");

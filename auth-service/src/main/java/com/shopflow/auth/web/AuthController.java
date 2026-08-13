@@ -14,11 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Public endpoints (whitelisted at the gateway):
- *   POST /api/v1/auth/register  -> create account, returns JWT
- *   POST /api/v1/auth/login     -> verify credentials, returns JWT
- *
- * @Valid triggers Bean Validation on the DTO BEFORE the method body runs.
+ * Public endpoints:
+ *   POST /api/v1/auth/register - create an account, returns a token
+ *   POST /api/v1/auth/login    - check credentials, returns a token
  */
 @RestController
 @RequestMapping("/api/v1/auth")

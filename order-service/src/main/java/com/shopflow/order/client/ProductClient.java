@@ -7,25 +7,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.math.BigDecimal;
 
 /**
- * SYNCHRONOUS inter-service communication - OpenFeign declarative client.
+ * Calls product-service for pricing. Synchronous because an order can't be
+ * created without the price.
  *
- * name = "product-service" is the EUREKA service id, not a URL. At runtime
- * Spring Cloud LoadBalancer resolves it to a live instance - the second half
- * of the service-discovery story (register in Eureka, then call by name).
- *
- * SYNC vs ASYNC - when each is used in this project:
- *  - SYNC (this call): order creation NEEDS the price before it can proceed;
- *    the answer is part of the request/response cycle. Cost: temporal
- *    coupling - if product-service is down, order creation degrades.
- *  - ASYNC (Kafka): the saga steps and notifications don't need an immediate
- *    answer; messaging decouples availability (inventory-service can be down
- *    for a minute and the saga simply resumes when it returns).
- * "Query synchronously, command asynchronously" is a decent rule of thumb.
+ * "product-service" is the Eureka service id, not a URL - Spring Cloud
+ * LoadBalancer resolves it to a live instance at call time.
  */
 @FeignClient(name = "product-service", path = "/api/v1/products")
 public interface ProductClient {
 
-    /** Tolerant-reader DTO: only the fields order-service cares about. */
+    /** Only the fields order-service needs; other fields are ignored. */
     record ProductDto(String id, String name, BigDecimal price) {
     }
 

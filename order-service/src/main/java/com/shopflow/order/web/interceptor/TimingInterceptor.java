@@ -9,19 +9,11 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * SPRING MVC INTERCEPTOR (HandlerInterceptor) - registered in WebMvcConfig.
+ * Times each controller method and logs how long it took.
  *
- * Runs INSIDE Spring MVC, after handler mapping - so unlike a Servlet Filter
- * it KNOWS which controller method is about to execute (the `handler` param).
- * That makes interceptors the right tool for handler-aware concerns:
- * per-endpoint timing, checking custom annotations on controller methods
- * (e.g. a home-made @RequiresRole), tenant resolution, etc.
- *
- * Lifecycle:
- *  - preHandle        before the controller (return false = abort request)
- *  - postHandle       after the controller, before view rendering
- *  - afterCompletion  after the response is done, ALWAYS called (even on
- *                     exception) - the safe place to stop timers / clean up.
+ * Runs inside Spring MVC after handler mapping, so unlike a servlet filter it
+ * knows which controller method will handle the request. Registered in
+ * WebMvcConfig. afterCompletion always runs, including on exceptions.
  */
 @Component
 public class TimingInterceptor implements HandlerInterceptor {
@@ -32,7 +24,7 @@ public class TimingInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         request.setAttribute(START_ATTR, System.nanoTime());
-        return true;   // false would short-circuit the request here
+        return true;   // false would stop the request here
     }
 
     @Override
@@ -41,7 +33,6 @@ public class TimingInterceptor implements HandlerInterceptor {
         Object start = request.getAttribute(START_ATTR);
         if (start instanceof Long s && handler instanceof HandlerMethod method) {
             long ms = (System.nanoTime() - s) / 1_000_000;
-            // We can name the exact controller method - a Filter cannot do this.
             log.info("Handler {}.{} took {} ms{}",
                     method.getBeanType().getSimpleName(), method.getMethod().getName(), ms,
                     ex != null ? " (exception: " + ex.getClass().getSimpleName() + ")" : "");

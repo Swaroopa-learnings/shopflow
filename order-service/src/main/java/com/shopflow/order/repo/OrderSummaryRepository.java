@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
-/** Query-side repository - only ever read by the query API, written by the projection. */
+/** Read-model repository: read by the query API, written by the projection. */
 public interface OrderSummaryRepository extends JpaRepository<OrderSummaryEntity, UUID> {
 
     List<OrderSummaryEntity> findByUserIdOrderByCreatedAtDesc(String userId);

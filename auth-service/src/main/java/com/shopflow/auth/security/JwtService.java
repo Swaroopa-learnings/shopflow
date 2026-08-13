@@ -13,8 +13,8 @@ import java.time.Instant;
 import java.util.Date;
 
 /**
- * Mints signed JWTs. Verification happens in api-gateway and order-service
- * using the same shared secret (HS256).
+ * Creates signed JWTs. The gateway and order-service verify them with the
+ * same shared secret.
  */
 @Service
 public class JwtService {
@@ -31,14 +31,12 @@ public class JwtService {
     public String generateToken(AppUser user) {
         Instant now = Instant.now();
         return Jwts.builder()
-                // "sub" claim = stable user identifier; downstream services use it
-                // as the customer id (gateway forwards it as X-User-Id).
+                // The subject is the user id; the gateway forwards it as X-User-Id.
                 .subject(String.valueOf(user.getId()))
                 .claim("email", user.getEmail())
                 .claim("role", user.getRole())
                 .issuedAt(Date.from(now))
-                // Short-lived on purpose: a stateless token cannot be revoked,
-                // so a small expiry window limits the damage of a leaked token.
+                // Short-lived, since a stateless token can't be revoked early.
                 .expiration(Date.from(now.plus(Duration.ofMinutes(expiryMinutes))))
                 .signWith(key)
                 .compact();

@@ -3,11 +3,9 @@ server:
 
 spring:
   application:
-    name: auth-service     # this is the name registered in Eureka
+    name: auth-service     # the name registered in Eureka
   profiles:
-    # SPRING PROFILES: 'dev' is the default so a fresh clone runs with zero
-    # external DB (H2 in-memory). Start with -Dspring-boot.run.profiles=prod
-    # (or SPRING_PROFILES_ACTIVE=prod) to switch to Postgres.
+    # dev = H2 in memory, prod = Postgres. Override with SPRING_PROFILES_ACTIVE.
     default: dev
 
 eureka:
@@ -15,14 +13,13 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
   instance:
-    # Stable hostname instead of the machine's LAN IP - see api-gateway's
-    # application.yml for why this matters on a laptop.
+    # Stable hostname instead of the machine's LAN IP.
     hostname: localhost
     prefer-ip-address: false
 
 app:
   jwt:
-    secret: "change-me-shopflow-demo-secret-key-32b!"   # must match gateway/order-service
+    secret: "change-me-shopflow-demo-secret-key-32b!"   # must match gateway and order-service
     expiry-minutes: 60
 
 management:
@@ -32,24 +29,23 @@ management:
         include: health,info,metrics
 
 ---
-# ---------------- dev profile: H2 in-memory ----------------
+# dev profile: in-memory H2
 spring:
   config:
     activate:
       on-profile: dev
   datasource:
-    # DB_CLOSE_DELAY=-1: keep the in-memory DB alive for the JVM's lifetime,
-    # otherwise H2 drops it when Hikari closes the last idle connection.
+    # DB_CLOSE_DELAY=-1 keeps the database alive for the life of the JVM.
     url: jdbc:h2:mem:authdb;DB_CLOSE_DELAY=-1
   jpa:
     hibernate:
-      ddl-auto: create-drop    # fine for a demo; NEVER in prod (use Flyway/Liquibase)
+      ddl-auto: create-drop    # use migrations in real deployments
   h2:
     console:
-      enabled: true            # browse the DB at /h2-console
+      enabled: true            # /h2-console
 
 ---
-# ---------------- prod profile: Postgres + tuned HikariCP ----------------
+# prod profile: Postgres
 spring:
   config:
     activate:

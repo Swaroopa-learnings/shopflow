@@ -13,9 +13,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * EVENT SOURCING demonstrated end-to-end: current state as a pure function of
- * the event history. No table is read - only events are folded, one by one,
- * through apply(). This is exactly how frameworks like Axon rebuild aggregates.
+ * Rebuilds an order's current state by replaying its stored events.
+ * No table is read - state is derived purely from the event history.
  */
 public class OrderAggregate {
 
@@ -37,7 +36,7 @@ public class OrderAggregate {
         return agg;
     }
 
-    /** One state transition per event type - the fold step. */
+    /** Applies one event to the current state. */
     private void apply(Object event) {
         if (event instanceof OrderCreatedEvent e) {
             this.orderId = e.orderId();
@@ -52,7 +51,7 @@ public class OrderAggregate {
             this.status = OrderStatus.CANCELLED;
             this.cancellationReason = e.reason();
         }
-        // Unknown historical event types: skipped (forward compatibility).
+        // Unknown event types are skipped.
     }
 
     private static Object deserialize(OrderEventEntity stored, ObjectMapper mapper) {

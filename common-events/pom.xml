@@ -1,14 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  COMMON-EVENTS: plain library jar (NOT a Spring Boot app) holding the Kafka
-  message contracts shared by every producer and consumer.
-
-  WHY A SHARED CONTRACT MODULE?
-  Producer and consumer must agree on the shape of a message. Putting the
-  records in one artifact guarantees that at compile time. The trade-off
-  (worth mentioning in interviews): a shared jar couples services at build
-  time - large orgs prefer a Schema Registry (Avro/Protobuf) so each service
-  can evolve independently with enforced compatibility rules.
+  A plain library jar holding the Kafka message contracts shared by every
+  producer and consumer, so both sides agree on the shape at compile time.
+  Larger systems often use a schema registry instead.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -23,8 +17,7 @@
     <name>ShopFlow :: Common Events</name>
 
     <dependencies>
-        <!-- Only Jackson annotations (@JsonIgnoreProperties for tolerant readers).
-             Deliberately NO Spring dependency: contracts should be framework-free. -->
+        <!-- Jackson annotations only; no Spring dependency here on purpose. -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
@@ -33,8 +26,7 @@
 
     <build>
         <plugins>
-            <!-- The Boot parent activates repackaging; a plain library must skip it,
-                 otherwise Maven fails looking for a main class. -->
+            <!-- Skip repackaging: this is a library, not an application. -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

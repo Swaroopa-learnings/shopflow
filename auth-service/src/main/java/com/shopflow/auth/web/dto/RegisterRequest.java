@@ -5,12 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * REQUEST VALIDATION (Bean Validation / JSR-380).
- *
- * Constraints live ON THE DTO; they fire when the controller parameter is
- * annotated with @Valid. Violations raise MethodArgumentNotValidException,
- * which GlobalExceptionHandler converts into a clean 400 response listing
- * every bad field. Validating at the edge keeps garbage out of the domain.
+ * Body of POST /api/v1/auth/register. The constraints run when the controller
+ * marks the parameter @Valid; failures become a 400.
  */
 public record RegisterRequest(
 

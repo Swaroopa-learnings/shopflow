@@ -8,28 +8,22 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 /**
- * MONGO DOCUMENT (compare with the JPA @Entity classes in the other services).
+ * A product in the catalog, stored as a MongoDB document.
  *
- * - @Document maps to the "products" COLLECTION (not table).
- * - No schema migration needed: adding a field tomorrow just... works.
- * - The `attributes` map is the killer feature here: each product carries
- *   arbitrary category-specific fields ({"ram":"16GB"} vs {"size":"XL"}) -
- *   painful in SQL (EAV tables / JSONB), natural in a document store.
- *
- * Implements Serializable because instances are stored in Redis by the cache
- * (we use JSON serialization, but Serializable keeps options open).
+ * The attributes map holds category-specific fields - a laptop has RAM and CPU,
+ * a shirt has size and colour - without needing a fixed schema.
  */
 @Document(collection = "products")
 public class Product implements Serializable {
 
     @Id
-    private String id;              // Mongo ObjectId as String
+    private String id;
 
     private String name;
     private String description;
     private String category;
     private BigDecimal price;
-    private Map<String, String> attributes;   // schemaless, per-category fields
+    private Map<String, String> attributes;   // category-specific fields
 
     public Product() {
     }

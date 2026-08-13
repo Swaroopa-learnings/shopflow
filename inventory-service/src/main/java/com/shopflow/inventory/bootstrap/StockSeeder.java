@@ -11,9 +11,8 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 /**
- * Seeds stock matching product-service's demo catalog.
- * p-1003 gets only 2 units ON PURPOSE: order 3+ of it to watch the saga's
- * rejection path (order ends CANCELLED with "insufficient stock").
+ * Seeds stock for the demo catalog. p-1003 only has 2 units, so ordering more
+ * exercises the out-of-stock path.
  */
 @Configuration
 public class StockSeeder {
@@ -29,7 +28,7 @@ public class StockSeeder {
             repo.saveAll(List.of(
                     new InventoryItem("p-1001", 50),
                     new InventoryItem("p-1002", 200),
-                    new InventoryItem("p-1003", 2)     // scarce on purpose - demo the failure path
+                    new InventoryItem("p-1003", 2)     // deliberately scarce
             ));
             log.info("Seeded stock for {} products", repo.count());
         };

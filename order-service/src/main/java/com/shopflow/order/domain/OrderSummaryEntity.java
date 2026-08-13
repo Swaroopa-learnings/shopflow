@@ -13,19 +13,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * READ MODEL (CQRS query side) - a flat, denormalized row per order, shaped
- * exactly like the JSON the query API returns.
+ * Read model: one flat row per order, shaped like the JSON the query API
+ * returns. Written only by OrderProjection from the event stream, never by
+ * command handlers.
  *
- * It is populated ONLY by OrderProjection consuming the Kafka event log -
- * never written by command handlers. That one-way flow is what makes it CQRS:
- *
- *   commands -> write model + events        events -> read model -> queries
- *
- * Consequence to own in interviews: the read model is EVENTUALLY CONSISTENT -
- * for a few milliseconds after creation, GET may not see the order yet.
- * In exchange, reads are trivial indexed lookups that scale independently
- * (this table could live in Elasticsearch or a replica DB with zero impact
- * on the write side).
+ * Because it is updated asynchronously it is eventually consistent - a query
+ * made immediately after creation may not see the order yet.
  */
 @Entity
 @Table(name = "order_summaries", indexes = @Index(columnList = "userId"))
@@ -47,7 +40,7 @@ public class OrderSummaryEntity {
     @Column(nullable = false)
     private OrderStatus status;
 
-    /** Human-readable saga outcome, e.g. "payment declined". */
+    /** Why the order ended in this state, e.g. "payment declined". */
     private String statusReason;
 
     private Instant createdAt;

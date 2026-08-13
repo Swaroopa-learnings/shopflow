@@ -14,17 +14,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * WRITE-SIDE controller (CQRS): accepts commands only. All reads live in
- * OrderQueryController - the separation is visible right at the API surface.
+ * Write side of the order API - commands only; reads live in OrderQueryController.
  *
- * Returns 202 ACCEPTED (not 201): the order is recorded, but fulfillment is
- * asynchronous - the saga decides COMPLETED/CANCELLED later. The client polls
- * GET /api/v1/orders/{id} to observe the outcome. This is the honest status
- * code for async processing.
- *
- * The X-User-Id header is injected by the API gateway from the verified JWT -
- * the client cannot spoof it (gateway overwrites any inbound value... in this
- * demo trust chain; a mesh would enforce it with mTLS).
+ * Returns 202 Accepted because fulfillment is asynchronous: the saga decides
+ * COMPLETED or CANCELLED later and the client polls for the result.
+ * X-User-Id is set by the gateway from the verified JWT.
  */
 @RestController
 @RequestMapping("/api/v1/orders")

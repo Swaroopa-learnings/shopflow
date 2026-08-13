@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** One consistent error envelope for the whole order API. */
+/** Turns exceptions into consistent JSON error responses. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /** @Valid failures -> 400 with per-field messages. */
+    /** Validation failures return 400 with a field-by-field message map. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> fields = new LinkedHashMap<>();
@@ -26,14 +26,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", "VALIDATION_FAILED", "fields", fields));
     }
 
-    /** Missing X-User-Id means the request bypassed the gateway. */
+    /** A missing X-User-Id means the request didn't come through the gateway. */
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<Map<String, Object>> handleMissingHeader(MissingRequestHeaderException ex) {
         return ResponseEntity.badRequest()
                 .body(Map.of("error", "Missing header: " + ex.getHeaderName()));
     }
 
-    /** Downstream sync call failed (e.g. product-service returned 404 or is down). */
+    /** product-service returned an error or was unreachable. */
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<Map<String, Object>> handleFeign(FeignException ex) {
         HttpStatus status = ex.status() == 404 ? HttpStatus.NOT_FOUND : HttpStatus.BAD_GATEWAY;

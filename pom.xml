@@ -1,26 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ROOT (PARENT) POM - Maven multi-module build.
+  Parent POM for the multi-module build.
 
-  WHY A MULTI-MODULE BUILD?
-  Each microservice is an independent Spring Boot application (its own jar, its own
-  port, its own database), but they share one parent so that:
-    1. Dependency versions are managed in ONE place (no version drift between services).
-    2. A single `mvn clean install` builds everything in the correct order
-       (Maven builds `common-events` first because other modules depend on it).
-
-  INTERVIEW NOTE: In a real company each service usually lives in its OWN git repo
-  and is versioned/deployed independently. A mono-repo like this is chosen here so
-  the whole showcase can be cloned and run in one shot.
+  Each service is an independent Spring Boot application, but they share this
+  parent so dependency versions are managed in one place and a single
+  `mvn clean install` builds every module in the right order.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Inheriting from spring-boot-starter-parent gives us:
-         - curated dependency versions (the Spring Boot BOM)
-         - sensible Maven plugin defaults (compiler release, resource filtering, etc.) -->
+    <!-- Provides curated dependency versions and Maven plugin defaults. -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -49,9 +40,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <!-- Spring Cloud release train MUST be compatible with the Boot version.
-             Boot 3.3.x pairs with Spring Cloud 2023.0.x ("Leyton").
-             Compatibility matrix: https://spring.io/projects/spring-cloud -->
+        <!-- Must match the Boot version: 3.3.x pairs with Spring Cloud 2023.0.x. -->
         <spring-cloud.version>2023.0.3</spring-cloud.version>
         <jjwt.version>0.12.6</jjwt.version>
         <resilience4j.version>2.2.0</resilience4j.version>
@@ -59,8 +48,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- BOM (Bill Of Materials) import: lets child modules declare Spring Cloud
-                 starters WITHOUT a version - the version comes from this one line. -->
+            <!-- Lets modules declare Spring Cloud starters without a version. -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -68,13 +56,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Our shared event/command classes used by every Kafka producer/consumer. -->
+            <!-- Shared event and command classes. -->
             <dependency>
                 <groupId>com.shopflow</groupId>
                 <artifactId>common-events</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- JJWT: library used to create/parse JWTs in auth-service, gateway, order-service. -->
+            <!-- Creates and parses JWTs. -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
@@ -90,7 +78,7 @@
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
             </dependency>
-            <!-- Resilience4j: circuit breaker / retry annotations (payment-service). -->
+            <!-- Circuit breaker and retry annotations. -->
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-spring-boot3</artifactId>

@@ -1,18 +1,11 @@
-# =============================================================================
-# INFRASTRUCTURE for ShopFlow (the Spring services themselves run via `mvn`).
+# Backing services for ShopFlow. The Spring applications run separately via mvn.
 #
-#   docker compose up -d        -> starts Postgres, MongoDB, Redis, Kafka
-#   docker compose down -v      -> stops everything and wipes data volumes
-#
-# WHY: Microservices demos die when the reader has to hand-install 4 databases.
-# One compose file makes the whole backing stack reproducible.
-# =============================================================================
+#   docker compose up -d     start Postgres, MongoDB, Redis and Kafka
+#   docker compose down -v   stop everything and delete the data volumes
 services:
 
-  # ---- Relational DB (orders, inventory, payments, users) -------------------
-  # One Postgres instance, multiple logical databases (created by the init script)
-  # to keep the demo light. In production each service owns its own DB instance /
-  # schema - "database per service" pattern - so services never share tables.
+  # Relational database for orders, inventory, payments and users.
+  # One instance with a database per service, created by the init script.
   postgres:
     image: postgres:16-alpine
     container_name: shopflow-postgres
@@ -30,10 +23,7 @@ services:
       - source: postgres-init
         target: /docker-entrypoint-initdb.d/init.sql
 
-  # ---- Non-relational DB (product catalog) ----------------------------------
-  # MongoDB stores the product catalog: catalog data is document-shaped
-  # (nested attributes, per-category fields) and read-heavy - a natural fit
-  # for a document store. This is the "non-relational DB integration" part.
+  # Document database for the product catalog.
   mongodb:
     image: mongo:7
     container_name: shopflow-mongo
@@ -42,21 +32,15 @@ services:
     volumes:
       - mongodata:/data/db
 
-  # ---- Redis ----------------------------------------------------------------
-  # Used for THREE distinct patterns in this project:
-  #   1. Distributed cache        (product-service @Cacheable)
-  #   2. API rate limiting        (api-gateway RequestRateLimiter)
-  #   3. Idempotency-key storage  (order-service IdempotencyFilter)
+  # Redis: product cache, gateway rate-limit counters, and idempotency keys.
   redis:
     image: redis:7-alpine
     container_name: shopflow-redis
     ports:
       - "6379:6379"
 
-  # ---- Kafka (KRaft mode - no ZooKeeper needed) -----------------------------
-  # The asynchronous backbone: saga commands/replies, the order event log
-  # (event sourcing), and notification fan-out all flow through Kafka topics.
-  # Official Apache image (Bitnami images were removed from Docker Hub in 2025).
+  # Kafka in KRaft mode (no ZooKeeper). Carries the saga commands and replies,
+  # the order event stream, and notifications.
   kafka:
     image: apache/kafka:3.7.0
     container_name: shopflow-kafka
@@ -71,7 +55,7 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      # Single-broker demo: internal topics can't have replicas > 1.
+      # Single broker, so internal topics can't have more than one replica.
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -81,9 +65,7 @@ volumes:
   pgdata:
   mongodata:
 
-# SQL lives in its own file (easier to maintain than inline YAML); compose
-# copies the content into the container - no host bind-mount involved, so no
-# macOS file-sharing permission issues.
+# Compose copies this file into the container, so no bind mount is needed.
 configs:
   postgres-init:
     file: ./deploy/postgres-init.sql

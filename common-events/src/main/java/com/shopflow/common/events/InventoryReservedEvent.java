@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.UUID;
 
-/** Saga reply: stock reservation succeeded - orchestrator proceeds to payment. */
+/** Stock was reserved; the saga moves on to payment. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record InventoryReservedEvent(
         UUID orderId,

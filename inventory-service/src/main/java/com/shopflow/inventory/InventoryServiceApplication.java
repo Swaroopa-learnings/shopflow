@@ -4,11 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * INVENTORY-SERVICE - saga PARTICIPANT (contrast with the ORCHESTRATOR in
- * order-service). It has no idea a "saga" exists: it just consumes commands
- * from its topic, runs a LOCAL ACID transaction on its own database, and
- * publishes the outcome. That ignorance is a feature - participants stay
- * simple and independently testable.
+ * Inventory service: consumes stock commands, updates its own database in a
+ * local transaction, and publishes the outcome. It has no knowledge of the
+ * saga it takes part in.
  */
 @SpringBootApplication
 public class InventoryServiceApplication {

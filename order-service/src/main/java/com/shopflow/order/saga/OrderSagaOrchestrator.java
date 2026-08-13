@@ -24,41 +24,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 
 /**
- * SAGA PATTERN - orchestration variant. THE distributed-transactions answer.
+ * Drives the order saga across inventory- and payment-service.
  *
- * THE PROBLEM: "place an order" must update THREE services' databases (order,
- * inventory, payment). A classic ACID transaction can't span services, and
- * 2PC (two-phase commit / XA) is avoided in microservices: it holds locks
- * across the network, the coordinator is a single point of failure, and most
- * modern brokers/stores don't support it anyway.
+ * Each step is a local transaction in its own service. If a later step fails,
+ * earlier ones are undone with compensating commands instead of a rollback:
  *
- * THE SAGA ANSWER: break the global transaction into a chain of LOCAL
- * transactions, each committed independently. If step N fails, run
- * COMPENSATING actions to semantically undo steps 1..N-1:
- *
- *   OrderCreated
- *     -> [reserve inventory]  ok -> [process payment] ok -> ORDER COMPLETED
- *            | rejected                  | failed
- *            v                           v
- *      ORDER CANCELLED       [release inventory]  <- compensation!
- *                                   -> ORDER CANCELLED
- *
- * ORCHESTRATION vs CHOREOGRAPHY (know both):
- *  - Orchestration (this class): a central coordinator sends commands and
- *    reacts to replies. + Flow is explicit and debuggable in one place.
- *    - Orchestrator is an extra component that knows about the participants.
- *  - Choreography: no coordinator; each service reacts to the previous
- *    service's events. + Fully decoupled. - The flow exists nowhere in code;
- *    understanding "what happens after payment fails" means reading N repos.
- *
- * Eventual consistency is the price: between steps, the system is briefly
- * "inconsistent" (stock reserved, money not yet taken) - and that's FINE,
- * because every intermediate state is an explicit, recoverable status.
+ *   reserve stock -> charge payment -> COMPLETED
+ *        |                |
+ *     rejected         failed -> release stock -> CANCELLED
  */
 @Component
-// One class-level listener consuming BOTH reply topics, with @KafkaHandler
-// methods routing by payload type - see InventoryCommandListener for why bare
-// Object parameters must be avoided here.
+// One listener over both reply topics; @KafkaHandler methods route by payload type.
 @KafkaListener(topics = {Topics.INVENTORY_EVENTS, Topics.PAYMENT_EVENTS}, groupId = "order-saga")
 public class OrderSagaOrchestrator {
 
@@ -80,27 +56,25 @@ public class OrderSagaOrchestrator {
     // Saga step 1 reply: inventory-service
     // ------------------------------------------------------------------
 
-    /** Stock reserved -> advance the saga and ask payment-service to charge. */
+    /** Stock reserved: move to AWAITING_PAYMENT and request the charge. */
     @KafkaHandler
     @Transactional
     public void onInventoryReserved(InventoryReservedEvent reserved) {
         orderRepository.findById(reserved.orderId()).ifPresent(order -> {
-            // Guard: only advance from the expected state (a late/duplicate
-            // reply must not resurrect a cancelled order).
+            // A late or duplicate reply must not resurrect a cancelled order.
             if (order.getStatus() != OrderStatus.PENDING) {
                 log.warn("Ignoring InventoryReserved for order {} in state {}",
                         order.getId(), order.getStatus());
                 return;
             }
             order.transitionTo(OrderStatus.AWAITING_PAYMENT);
-            // Saga step 2: charge the customer.
             kafkaTemplate.send(Topics.PAYMENT_COMMANDS, order.getId().toString(),
                     new ProcessPaymentCommand(order.getId(), order.getUserId(), order.getTotalAmount()));
             log.info("Saga[{}]: inventory reserved -> requesting payment", order.getId());
         });
     }
 
-    /** Out of stock -> first step failed, so nothing to compensate; just cancel. */
+    /** Out of stock: nothing was reserved, so just cancel the order. */
     @KafkaHandler
     @Transactional
     public void onInventoryRejected(InventoryRejectedEvent rejected) {
@@ -111,7 +85,7 @@ public class OrderSagaOrchestrator {
     // Saga step 2 reply: payment-service
     // ------------------------------------------------------------------
 
-    /** Money captured -> the happy path ends here. */
+    /** Payment captured: the order is complete. */
     @KafkaHandler
     @Transactional
     public void onPaymentCompleted(PaymentCompletedEvent completed) {
@@ -129,9 +103,8 @@ public class OrderSagaOrchestrator {
     }
 
     /**
-     * Payment failed AFTER stock was reserved. THIS is the compensation step:
-     * the reservation is already committed in another service's database, so it
-     * cannot be rolled back - it must be explicitly undone.
+     * Payment failed after stock was reserved. The reservation is already
+     * committed elsewhere, so it is undone with a compensating command.
      */
     @KafkaHandler
     @Transactional
@@ -141,7 +114,7 @@ public class OrderSagaOrchestrator {
         cancelOrder(failed.orderId(), "Payment failed: " + failed.reason());
     }
 
-    /** Anything unrecognized - logged loudly rather than silently dropped. */
+    /** Unrecognized payloads are logged rather than dropped silently. */
     @KafkaHandler(isDefault = true)
     public void onUnknown(Object payload) {
         log.error("Unhandled saga reply of type {} - saga will stall. Payload: {}",

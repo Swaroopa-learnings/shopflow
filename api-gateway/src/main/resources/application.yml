@@ -1,5 +1,5 @@
 server:
-  port: 8080   # the ONLY port external clients ever talk to
+  port: 8080   # the only port external clients use
 
 spring:
   application:
@@ -10,11 +10,8 @@ spring:
       port: 6379
   cloud:
     gateway:
-      # -----------------------------------------------------------------------
-      # ROUTES: predicate (when does this route match) + URI (where to send it).
-      # "lb://<name>" = look the service up in Eureka and client-side load
-      # balance across its instances. No hardcoded hosts/ports anywhere.
-      # -----------------------------------------------------------------------
+      # Each route is a path predicate plus a destination. "lb://name" looks the
+      # service up in Eureka and balances across its instances.
       routes:
         - id: auth-service
           uri: lb://auth-service
@@ -30,9 +27,8 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=/api/v1/orders/**
-          # RATE LIMITING applied to the order route: Redis token bucket.
-          # steady state 5 req/s per user, bursts up to 10 allowed.
-          # Exceeding it returns HTTP 429 with X-RateLimit-* headers.
+          # Rate limit: 5 requests/second per user, bursting to 10.
+          # Requests over the limit get a 429.
           filters:
             - name: RequestRateLimiter
               args:
@@ -45,18 +41,12 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
   instance:
-    # Register as "localhost" rather than the machine's LAN IP.
-    # On a laptop the IP changes whenever the network does (wifi <-> hotspot,
-    # new DHCP lease). Eureka would keep advertising the OLD address, and every
-    # lb:// route would fail with a 500 until the stale registration expired.
-    # For a single-machine demo, localhost is stable and always correct.
-    # (In real deployments you DO want prefer-ip-address: true, because pods and
-    # VMs have no resolvable hostnames - but then registrations are short-lived.)
+    # Register as localhost rather than the machine's LAN IP, which changes
+    # with the network and would leave stale addresses in the registry.
     hostname: localhost
     prefer-ip-address: false
 
-# Shared HMAC secret for JWT verification (mirror of auth-service).
-# In production: externalize via env var / vault, and prefer RS256 key pairs.
+# Same secret auth-service signs tokens with. Externalize this in real deployments.
 app:
   jwt:
     secret: "change-me-shopflow-demo-secret-key-32b!"
@@ -65,7 +55,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway   # /actuator/gateway/routes shows live route table
+        include: health,info,gateway   # /actuator/gateway/routes lists the live routes
 
 logging:
   level:

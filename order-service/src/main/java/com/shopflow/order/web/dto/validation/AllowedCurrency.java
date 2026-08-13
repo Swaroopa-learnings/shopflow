@@ -10,10 +10,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * CUSTOM VALIDATION ANNOTATION - the two-part recipe:
- *   1. this annotation, marked @Constraint(validatedBy = <validator class>)
- *   2. the validator implementing ConstraintValidator (does the actual check)
- * After that it composes with @Valid exactly like the built-in constraints.
+ * Checks that a currency code is one this shop accepts.
+ * The check itself lives in AllowedCurrencyValidator.
  */
 @Documented
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT})

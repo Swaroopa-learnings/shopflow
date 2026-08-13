@@ -9,11 +9,10 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Async entry point. NOTE: the listener delegates to PaymentProcessor through
- * the Spring proxy - the @CircuitBreaker/@Retry aspects only apply on calls
- * that cross the bean boundary (same self-invocation rule as @Cacheable).
- * Had process() lived in THIS class and been called directly, the annotations
- * would be silently ignored.
+ * Consumes payment commands and delegates to PaymentProcessor.
+ *
+ * The call goes through the Spring proxy, which is what makes the @Retry and
+ * @CircuitBreaker annotations on the processor take effect.
  */
 @Component
 public class PaymentCommandListener {
@@ -27,10 +26,8 @@ public class PaymentCommandListener {
     }
 
     /**
-     * This topic carries only ONE command type, so a plain method-level listener
-     * with a CONCRETE parameter type is enough - Spring resolves the payload
-     * unambiguously. (A bare {@code Object} parameter would instead receive the
-     * raw ConsumerRecord; see InventoryCommandListener for that trap.)
+     * One command type on this topic, so a concrete parameter is enough for
+     * Spring to resolve the payload.
      */
     @KafkaListener(topics = Topics.PAYMENT_COMMANDS, groupId = "payment-service")
     public void onCommand(ProcessPaymentCommand command) {

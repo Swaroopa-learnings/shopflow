@@ -18,16 +18,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * COMMAND HANDLER (CQRS write side) - the "place order" use-case.
+ * Handles the "place order" command: looks up the price, saves the order as
+ * PENDING, records OrderCreatedEvent, and starts the saga.
  *
- * Sequence:
- *  1. SYNC call to product-service (Feign) - validate the product & get price.
- *     Price is computed server-side; never trust an amount sent by the client.
- *  2. Persist the PENDING order (write model) - local ACID transaction.
- *  3. Append + publish OrderCreatedEvent (event sourcing).
- *  4. Send ReserveInventoryCommand - the saga's first step. From here on the
- *     flow is fully asynchronous; the HTTP response returns 202-style
- *     "PENDING" immediately and the client polls the query API for the outcome.
+ * Everything after this point is asynchronous - the caller gets PENDING back
+ * and polls the query API for the outcome.
  */
 @Service
 public class OrderCommandService {
@@ -51,20 +46,18 @@ public class OrderCommandService {
 
     @Transactional
     public UUID createOrder(String userId, CreateOrderRequest request) {
-        // (1) sync price lookup - fails fast with 404->exception if product unknown
+        // Price comes from product-service, never from the client.
         ProductClient.ProductDto product = productClient.getProduct(request.productId());
         BigDecimal total = product.price().multiply(BigDecimal.valueOf(request.quantity()));
 
-        // (2) write model: local transaction, PENDING state
         UUID orderId = UUID.randomUUID();
         orderRepository.save(new OrderEntity(orderId, userId, request.productId(),
                 request.quantity(), total));
 
-        // (3) event sourcing: fact recorded + streamed
         eventStore.appendAndPublish(orderId, new OrderCreatedEvent(
                 orderId, userId, request.productId(), request.quantity(), total, Instant.now()));
 
-        // (4) saga step 1: ask inventory-service to reserve stock (async, Kafka)
+        // Saga step 1: ask inventory-service to reserve stock.
         kafkaTemplate.send(Topics.INVENTORY_COMMANDS, orderId.toString(),
                 new ReserveInventoryCommand(orderId, request.productId(), request.quantity()));
 

@@ -28,33 +28,28 @@ eureka:
 
 app:
   bank:
-    # ~30% of bank calls fail -> retries usually save the order, but a burst of
-    # failures trips the breaker. Set to 1.0 to force the breaker OPEN, 0.0 for
-    # an always-happy path.
+    # Share of bank calls that fail. 1.0 forces the breaker open, 0.0 never fails.
     failure-rate: 0.3
 
-# -----------------------------------------------------------------------------
-# RESILIENCE4J - breaker + retry tuning (referenced by name from @CircuitBreaker
-# and @Retry annotations in PaymentProcessor).
-# -----------------------------------------------------------------------------
+# Breaker and retry settings, referenced by name from PaymentProcessor.
 resilience4j:
   circuitbreaker:
     instances:
       bankGateway:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10             # judge health over the last 10 calls
-        minimum-number-of-calls: 5          # don't judge before 5 samples
-        failure-rate-threshold: 50          # >=50% failures -> OPEN
-        wait-duration-in-open-state: 10s    # stay OPEN 10s, then HALF_OPEN
+        minimum-number-of-calls: 5          # need this many before judging
+        failure-rate-threshold: 50          # open at 50% failures
+        wait-duration-in-open-state: 10s    # stay open this long before retrying
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
-        register-health-indicator: true     # breaker state in /actuator/health
+        register-health-indicator: true     # breaker state appears in /actuator/health
   retry:
     instances:
       bankGateway:
-        max-attempts: 3                     # 1 original + 2 retries
+        max-attempts: 3                     # one call plus two retries
         wait-duration: 500ms
-        enable-exponential-backoff: true    # 500ms, 1s, ... spreads retry pressure
+        enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
           - com.shopflow.payment.client.MockBankClient$BankUnavailableException
@@ -74,8 +69,7 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    # DB_CLOSE_DELAY=-1: keep the in-memory DB alive for the JVM's lifetime,
-    # otherwise H2 drops it when Hikari closes the last idle connection.
+    # DB_CLOSE_DELAY=-1 keeps the database alive for the life of the JVM.
     url: jdbc:h2:mem:paymentdb;DB_CLOSE_DELAY=-1
   jpa:
     hibernate:

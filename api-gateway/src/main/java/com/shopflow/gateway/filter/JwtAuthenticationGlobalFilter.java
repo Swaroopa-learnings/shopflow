@@ -22,32 +22,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * EDGE AUTHENTICATION - a reactive {@link GlobalFilter} that runs for EVERY
- * route and verifies the JWT before the request is forwarded downstream.
+ * Verifies the JWT on every request before it is forwarded.
  *
- * FLOW:
- *  1. Public paths (login/register, actuator) are whitelisted and pass through.
- *  2. Otherwise the "Authorization: Bearer &lt;token&gt;" header is required.
- *  3. The token signature + expiry are verified with the shared HMAC secret.
- *  4. On success we MUTATE the request and add "X-User-Id" so downstream
- *     services know who the caller is without re-parsing the token themselves.
- *
- * DEFENSE IN DEPTH: order-service *also* validates the JWT (see its
- * SecurityConfig). The gateway check gives fast rejection at the edge; the
- * service check protects against anyone who bypasses the gateway on the
- * internal network. In a service mesh, mTLS between sidecars adds a third layer.
- *
- * INTERVIEW NOTE: HS256 (shared secret) keeps the demo simple, but it means
- * every verifier could also MINT tokens. Production systems prefer RS256:
- * auth-service signs with a private key, everyone else verifies with the
- * public key (fetched from a JWKS endpoint).
+ * Public paths pass straight through. Otherwise the token's signature and
+ * expiry are checked, and the user id is added as an X-User-Id header so
+ * downstream services don't have to parse the token again.
  */
 @Component
 public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationGlobalFilter.class);
 
-    /** Paths that must work WITHOUT a token. */
+    /** Paths that must work without a token. */
     private static final List<String> PUBLIC_PATH_PREFIXES = List.of(
             "/api/v1/auth",     // login + register
             "/actuator"         // gateway's own health endpoints
@@ -56,7 +42,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
     private final SecretKey key;
 
     public JwtAuthenticationGlobalFilter(@Value("${app.jwt.secret}") String secret) {
-        // Same secret as auth-service; must be >= 32 bytes for HS256.
+        // Same secret auth-service signs with; needs at least 32 bytes.
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -80,8 +66,8 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
                     .parseSignedClaims(authHeader.substring(7))
                     .getPayload();
 
-            // Propagate identity downstream as a plain header. Services trust this
-            // header only because all traffic is forced through the gateway.
+            // Downstream services trust this header because all traffic
+            // reaches them through the gateway.
             ServerHttpRequest mutated = exchange.getRequest().mutate()
                     .header("X-User-Id", claims.getSubject())
                     .build();
@@ -105,8 +91,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        // Run BEFORE the rate limiter / routing filters so unauthenticated
-        // traffic is dropped as early as possible.
+        // Runs before routing so unauthenticated traffic is dropped early.
         return -100;
     }
 }

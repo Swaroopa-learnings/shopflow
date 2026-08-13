@@ -17,14 +17,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * READ-SIDE controller (CQRS): serves ONLY the read model - it never touches
- * the write-model tables. Note there is no service layer here: the query side
- * is allowed to be thin because it contains no business rules at all.
+ * Read side of the order API. Serves the read model only, never the write
+ * tables, and has no service layer because it holds no business rules.
  *
- * Also exposes two event-sourcing "show off" endpoints:
- *   /{id}/events   - the raw immutable history (audit log for free)
- *   /{id}/rebuilt  - current state derived by REPLAYING events through
- *                    OrderAggregate.replay(), proving state == fold(events).
+ * Also exposes /{id}/events (the stored history) and /{id}/rebuilt (state
+ * recomputed by replaying that history).
  */
 @RestController
 @RequestMapping("/api/v1/orders")

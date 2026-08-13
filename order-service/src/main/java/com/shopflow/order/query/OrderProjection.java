@@ -15,24 +15,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * CQRS PROJECTION - the bridge from write side to read side.
+ * Builds the read model from the order event stream. Only writer of
+ * order_summaries.
  *
- * Subscribes to the ORDER_EVENTS stream and folds each event into the flat
- * read model. This is the ONLY writer of order_summaries.
- *
- * Note the consumer group "order-projection" is DIFFERENT from the saga's
- * group: in Kafka, each group gets its own full copy of the stream, so the
- * projection and any other consumer (e.g. notifications) process the same
- * events independently - that's the fan-out that makes event-driven read
- * models cheap to add.
- *
- * Handlers are written to be IDEMPOTENT (Kafka is at-least-once: redelivery
- * after a consumer crash is normal, so "handle the same event twice" must be
- * harmless - here, saving the same snapshot again).
+ * Its consumer group is separate from the saga's, so both read the same events
+ * independently. Handlers are idempotent because Kafka may redeliver.
  */
 @Component
-// Class-level listener + @KafkaHandler methods route each event type to its own
-// method (see InventoryCommandListener for why a bare Object parameter fails).
 @KafkaListener(topics = Topics.ORDER_EVENTS, groupId = "order-projection")
 public class OrderProjection {
 
@@ -44,11 +33,11 @@ public class OrderProjection {
         this.summaryRepository = summaryRepository;
     }
 
-    /** A new order appears in the read model. */
+    /** Adds the order to the read model. */
     @KafkaHandler
     @Transactional
     public void onOrderCreated(OrderCreatedEvent created) {
-        // Upsert (idempotent): redelivery just overwrites the same row.
+        // Upsert: redelivery just overwrites the same row.
         summaryRepository.save(new OrderSummaryEntity(
                 created.orderId(), created.userId(), created.productId(),
                 created.quantity(), created.totalAmount(),
@@ -56,7 +45,7 @@ public class OrderProjection {
         log.debug("Projected OrderCreated -> summary {}", created.orderId());
     }
 
-    /** Saga finished successfully. */
+    /** Marks the order completed. */
     @KafkaHandler
     @Transactional
     public void onOrderCompleted(OrderCompletedEvent completed) {
@@ -66,7 +55,7 @@ public class OrderProjection {
         });
     }
 
-    /** Saga failed or timed out; the reason is surfaced to the customer. */
+    /** Marks the order cancelled and records why. */
     @KafkaHandler
     @Transactional
     public void onOrderCancelled(OrderCancelledEvent cancelled) {
@@ -77,9 +66,8 @@ public class OrderProjection {
     }
 
     /**
-     * Event types this projection doesn't care about land here. Being tolerant
-     * is deliberate - NEW event types added later must not break OLD consumers -
-     * but we log at debug so the skip is discoverable rather than invisible.
+     * Event types this projection doesn't handle. Ignoring them keeps older
+     * consumers working when new event types are added.
      */
     @KafkaHandler(isDefault = true)
     public void onOther(Object payload) {

@@ -7,15 +7,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 /**
- * THREAD POOL FOR SCHEDULED TASKS.
+ * Thread pool for @Scheduled tasks.
  *
- * DEFAULT PITFALL: out of the box, Spring runs ALL @Scheduled methods on a
- * SINGLE thread. One slow job silently delays every other job - a classic
- * production incident ("why did the 2am report also stop the 30s sweep?").
- *
- * FIX: provide a ThreadPoolTaskScheduler via SchedulingConfigurer. Now up to
- * 4 jobs run concurrently, and the thread-name prefix makes them instantly
- * identifiable in logs and thread dumps ("sched-1", "sched-2", ...).
+ * By default Spring runs all scheduled methods on a single thread, so one slow
+ * job delays the others. This gives them a pool of four, with named threads
+ * ("sched-1", ...) so they're identifiable in logs.
  */
 @Configuration
 public class SchedulingConfig implements SchedulingConfigurer {
@@ -25,7 +21,7 @@ public class SchedulingConfig implements SchedulingConfigurer {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(4);
         scheduler.setThreadNamePrefix("sched-");
-        // If shutdown happens mid-job, wait briefly instead of killing it.
+        // On shutdown, wait briefly for running jobs instead of killing them.
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
         scheduler.setAwaitTerminationSeconds(10);
         scheduler.initialize();

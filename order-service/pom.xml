@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ORDER-SERVICE: the richest module - CQRS, event sourcing, saga orchestration,
-  idempotency, servlet filters, interceptors, scheduling, Feign, JWT security.
--->
+<!-- Order service: orders, the event store, the saga orchestrator and the read model. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -36,17 +33,17 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <!-- Redis for the idempotency-key store (servlet filter). -->
+        <!-- Redis, used to store idempotency keys. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        <!-- Kafka producer (event log + saga commands) and consumer (saga replies, projection). -->
+        <!-- Kafka producer and consumer. -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
-        <!-- SYNC inter-service call: declarative REST client resolved via Eureka. -->
+        <!-- Declarative REST client for calling product-service. -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
@@ -59,7 +56,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <!-- Exposes /actuator/prometheus for scraping - standard metrics pipeline. -->
+        <!-- Exposes /actuator/prometheus. -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>

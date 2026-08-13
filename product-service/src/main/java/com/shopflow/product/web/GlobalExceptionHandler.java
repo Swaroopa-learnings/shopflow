@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-/** Consistent error contract for the catalog API. */
+/** Turns exceptions into consistent JSON error responses. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

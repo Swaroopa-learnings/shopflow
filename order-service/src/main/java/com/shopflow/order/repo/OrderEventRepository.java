@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
-/** Event-store repository: append (save) and replay (ordered read) - nothing else. */
+/** Event-store repository: append and ordered replay only. */
 public interface OrderEventRepository extends JpaRepository<OrderEventEntity, Long> {
 
     List<OrderEventEntity> findByOrderIdOrderBySeqNoAsc(UUID orderId);

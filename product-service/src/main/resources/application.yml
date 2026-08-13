@@ -6,14 +6,14 @@ spring:
     name: product-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017/productdb   # non-relational store
+      uri: mongodb://localhost:27017/productdb
     redis:
       host: localhost
       port: 6379
   cache:
-    type: redis          # makes @Cacheable write to Redis (not an in-JVM map)
+    type: redis          # @Cacheable writes to Redis rather than an in-process map
     redis:
-      key-prefix: "shopflow:products:"   # namespacing keys in a shared Redis
+      key-prefix: "shopflow:products:"   # namespace for keys in a shared Redis
 
 eureka:
   client:
@@ -27,7 +27,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,caches   # /actuator/caches shows cache managers
+        include: health,info,metrics,caches
 
 logging:
   level:

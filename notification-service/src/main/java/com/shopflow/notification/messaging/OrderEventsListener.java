@@ -10,9 +10,10 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Consumer group "notification-service" - its OWN copy of the ORDER_EVENTS
- * stream, independent of the saga and the CQRS projection reading the same
- * events. Kafka pub/sub fan-out in one line of config.
+ * Turns order events into customer notifications.
+ *
+ * Its own consumer group means it reads the order event stream independently
+ * of the other services consuming the same topic.
  */
 @Component
 @KafkaListener(topics = Topics.ORDER_EVENTS, groupId = "notification-service")
@@ -40,13 +41,13 @@ public class OrderEventsListener {
 
     @KafkaHandler
     public void onOrderCancelled(OrderCancelledEvent cancelled) {
-        // Cancellation is urgent -> email + SMS (the @Qualifier routing in action).
+        // Cancellations are urgent, so they also go out by SMS.
         dispatcher.dispatch(cancelled.userId(), "Order cancelled",
                 "Order " + cancelled.orderId() + " was cancelled: " + cancelled.reason(),
                 true);
     }
 
-    /** Other event types simply aren't notification-worthy. */
+    /** Other event types don't produce notifications. */
     @KafkaHandler(isDefault = true)
     public void onOther(Object payload) {
         // no-op by design

@@ -6,11 +6,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * REQUEST VALIDATION - standard constraints plus a CUSTOM one.
- *
- * @Min/@Max guard business bounds; @AllowedCurrency is a hand-written
- * constraint (see the validation package) showing how to add rules Bean
- * Validation doesn't ship with.
+ * Body of POST /api/v1/orders. Validated by @Valid in the controller;
+ * @AllowedCurrency is a custom constraint defined in the validation package.
  */
 public record CreateOrderRequest(
 

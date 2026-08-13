@@ -10,14 +10,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * @RestControllerAdvice = one place to translate exceptions from ANY controller
- * into consistent HTTP responses (instead of try/catch in every endpoint).
- */
+/** Turns exceptions into consistent JSON error responses. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /** Bean Validation failures (@Valid) -> 400 with a field->message map. */
+    /** Validation failures return 400 with a field-by-field message map. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> fieldErrors = new LinkedHashMap<>();
@@ -29,7 +26,7 @@ public class GlobalExceptionHandler {
                 "fields", fieldErrors));
     }
 
-    /** Business rule violations (duplicate email, bad credentials). */
+    /** Duplicate email or bad credentials. */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBusiness(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

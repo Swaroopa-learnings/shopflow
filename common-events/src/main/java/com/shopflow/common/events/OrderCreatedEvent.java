@@ -7,14 +7,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Fact: a customer placed an order. First event in every order's event stream
- * and the trigger that starts the saga.
+ * A customer placed an order. First event in the order's stream and the
+ * trigger for the saga.
  *
- * BACKWARD COMPATIBILITY: {@code @JsonIgnoreProperties(ignoreUnknown = true)}
- * makes every consumer a "tolerant reader" - if a NEWER producer adds a field
- * (say {@code couponCode}), OLD consumers deserialize without crashing.
- * Rule of thumb for evolving events: only ADD optional fields; never rename,
- * remove, or change the meaning of existing ones.
+ * Unknown fields are ignored on read, so a newer producer can add optional
+ * fields without breaking older consumers.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record OrderCreatedEvent(

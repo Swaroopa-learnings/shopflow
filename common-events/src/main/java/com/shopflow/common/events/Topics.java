@@ -1,32 +1,24 @@
 package com.shopflow.common.events;
 
 /**
- * Central registry of Kafka topic names so producers and consumers can never
- * drift apart because of a typo in a string literal.
+ * Kafka topic names, kept in one place so producers and consumers agree.
  *
- * TOPIC DESIGN (worth explaining in an interview):
- *  - ORDER_EVENTS is an *event log*: facts about what happened to orders
- *    ("OrderCreated", "OrderCompleted"). Multiple independent consumers read it
- *    (the CQRS projection, notification-service) - classic pub/sub fan-out.
- *  - The *.COMMANDS topics carry imperatives addressed to exactly ONE service
- *    ("reserve this stock", "charge this card") - point-to-point messaging.
- *  - The *.EVENTS reply topics carry the outcome back to the saga orchestrator.
- *
- * Commands say "do this" (may be rejected); events say "this happened" (immutable fact).
+ * Commands ask one service to do something and can be refused; events record
+ * something that already happened and may have many readers.
  */
 public final class Topics {
 
-    /** Event-sourcing log + notification fan-out. Published by order-service. */
+    /** Order events, published by order-service and read by several services. */
     public static final String ORDER_EVENTS = "order.events";
 
-    /** Commands consumed by inventory-service (reserve / release stock). */
+    /** Stock commands for inventory-service. */
     public static final String INVENTORY_COMMANDS = "inventory.commands";
-    /** Outcomes published by inventory-service back to the saga orchestrator. */
+    /** Inventory outcomes, read by the saga. */
     public static final String INVENTORY_EVENTS = "inventory.events";
 
-    /** Commands consumed by payment-service (process payment). */
+    /** Payment commands for payment-service. */
     public static final String PAYMENT_COMMANDS = "payment.commands";
-    /** Outcomes published by payment-service back to the saga orchestrator. */
+    /** Payment outcomes, read by the saga. */
     public static final String PAYMENT_EVENTS = "payment.events";
 
     private Topics() {

@@ -7,9 +7,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
 /**
- * Stock level per product. `available` vs `reserved` split: reserving moves
- * units between the two columns; completing a sale would decrement `reserved`;
- * compensation moves them back. Money-like bookkeeping - never lose units.
+ * Stock level for one product. Reserving moves units from available to
+ * reserved; releasing moves them back.
  */
 @Entity
 @Table(name = "inventory_items")
@@ -24,9 +23,7 @@ public class InventoryItem {
     @Column(nullable = false)
     private int reserved;
 
-    /** Optimistic lock: two concurrent reservations for the last unit -> one
-     *  wins, the other gets OptimisticLockException and (on retry) a rejection.
-     *  No overselling without pessimistic DB locks. */
+    /** Optimistic lock: stops two concurrent reservations overselling the last unit. */
     @Version
     private Long version;
 

@@ -6,8 +6,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Fact: the order could not be fulfilled (no stock, payment declined, or timed
- * out). Emitted after the saga has run its compensating actions.
+ * The order could not be fulfilled. Published after any compensating actions
+ * have been sent.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record OrderCancelledEvent(

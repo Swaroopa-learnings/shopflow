@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.UUID;
 
-/** Saga reply: not enough stock - orchestrator cancels the order (no compensation needed, nothing was done yet). */
+/** Stock could not be reserved; the saga cancels the order. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record InventoryRejectedEvent(
         UUID orderId,

@@ -15,10 +15,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * The participant's local transaction. Each method is one ACID unit of work on
- * THIS service's database - the saga chains these local transactions together.
- */
+/** Reserves and releases stock. Each method is one local transaction. */
 @Service
 public class InventoryService {
 
@@ -38,11 +35,10 @@ public class InventoryService {
 
     @Transactional
     public void reserve(ReserveInventoryCommand cmd) {
-        // IDEMPOTENCY CHECK: PK = orderId. A redelivered command finds the
-        // existing reservation and re-sends the (idempotent) success reply
-        // WITHOUT touching stock a second time.
+        // A redelivered command finds the existing reservation and replies again
+        // without touching stock twice.
         if (reservationRepository.existsById(cmd.orderId())) {
-            log.info("Duplicate reserve command for order {} - replying reserved again (idempotent)", cmd.orderId());
+            log.info("Duplicate reserve command for order {} - replying reserved again", cmd.orderId());
             reply(new InventoryReservedEvent(cmd.orderId(), cmd.productId(), cmd.quantity()));
             return;
         }
@@ -63,12 +59,12 @@ public class InventoryService {
         reply(new InventoryReservedEvent(cmd.orderId(), cmd.productId(), cmd.quantity()));
     }
 
-    /** COMPENSATION: undo a reservation (payment failed or saga timed out). */
+    /** Undoes a reservation after a payment failure or timeout. */
     @Transactional
     public void release(ReleaseInventoryCommand cmd) {
         reservationRepository.findById(cmd.orderId()).ifPresentOrElse(reservation -> {
             if (reservation.isReleased()) {
-                log.info("Reservation for order {} already released (idempotent no-op)", cmd.orderId());
+                log.info("Reservation for order {} already released", cmd.orderId());
                 return;
             }
             inventoryRepository.findById(reservation.getProductId())
@@ -77,9 +73,8 @@ public class InventoryService {
             log.info("Released {} x {} for order {} (reason: {})",
                     reservation.getQuantity(), reservation.getProductId(), cmd.orderId(), cmd.reason());
         }, () ->
-            // Nothing was reserved (e.g. timeout fired before the reserve command
-            // arrived). Releasing nothing is a valid no-op - compensations must
-            // tolerate being called for work that never happened.
+            // Nothing was reserved, e.g. the timeout fired first. Releasing
+            // nothing is valid - compensation must tolerate that.
             log.info("Release for order {}: no reservation found - no-op", cmd.orderId())
         );
     }

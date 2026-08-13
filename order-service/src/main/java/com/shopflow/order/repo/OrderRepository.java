@@ -8,10 +8,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** Write-model repository (Spring Data JPA - implementation generated at startup). */
+/** Write-model repository. */
 public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
 
-    /** Used by the scheduled stale-order sweep: derived query -
-     *  "status = ? AND createdAt < ?" straight from the method name. */
+    /** Used by the stale-order sweep. */
     List<OrderEntity> findByStatusAndCreatedAtBefore(OrderStatus status, Instant cutoff);
 }

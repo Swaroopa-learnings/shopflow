@@ -4,11 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * PAYMENT-SERVICE - saga participant that "charges the customer" by calling a
- * deliberately unreliable MockBankClient, protected by a Resilience4j
- * CIRCUIT BREAKER + RETRY (see PaymentProcessor).
+ * Payment service: charges customers through a mock bank gateway, protected by
+ * a retry and circuit breaker.
  *
- * Watch the breaker live: http://localhost:8085/actuator/circuitbreakers
+ * Breaker state: http://localhost:8085/actuator/circuitbreakers
  */
 @SpringBootApplication
 public class PaymentServiceApplication {

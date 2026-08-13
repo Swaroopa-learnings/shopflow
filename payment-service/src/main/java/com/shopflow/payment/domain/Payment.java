@@ -10,9 +10,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Payment record - PK is the ORDER id: same idempotent-consumer trick as
- * inventory's Reservation. A redelivered ProcessPaymentCommand finds this row
- * and does NOT charge the customer twice.
+ * Payment record for an order. The order id is the primary key, so a
+ * redelivered command is recognised instead of charging the customer twice.
  */
 @Entity
 @Table(name = "payments")

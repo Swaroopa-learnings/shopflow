@@ -9,13 +9,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * One reservation per order - and the PRIMARY KEY IS THE ORDER ID.
- *
- * That single design choice makes the consumer IDEMPOTENT: Kafka delivers
- * at-least-once, so the same ReserveInventoryCommand can arrive twice (consumer
- * crash before offset commit, rebalance, ...). The second insert violates the
- * PK, we detect "already reserved", and simply DON'T subtract stock again.
- * Idempotent consumers are what make at-least-once delivery safe.
+ * One reservation per order. The order id is the primary key, so a redelivered
+ * command can be recognised as a duplicate instead of reserving stock twice.
  */
 @Entity
 @Table(name = "reservations")

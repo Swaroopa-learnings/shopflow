@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-/** Saga reply: money captured - orchestrator marks the order COMPLETED. */
+/** Payment succeeded; the saga completes the order. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PaymentCompletedEvent(
         UUID orderId,

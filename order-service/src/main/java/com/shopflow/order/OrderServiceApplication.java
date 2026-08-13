@@ -6,27 +6,14 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * ORDER-SERVICE - the heart of the system. One request to POST /api/v1/orders
- * exercises almost every pattern in this repo:
+ * Order service: accepts orders, records them as an event stream, and
+ * orchestrates the saga across inventory- and payment-service.
  *
- *  HTTP in  -> RequestLoggingFilter (Servlet Filter)
- *           -> JwtAuthFilter (Spring Security)
- *           -> IdempotencyFilter (Redis-backed dedupe)
- *           -> TimingInterceptor (HandlerInterceptor)
- *           -> OrderCommandController (@Valid request validation)
- *           -> OrderCommandService: SYNC Feign call to product-service (price),
- *              event appended to the event store (EVENT SOURCING),
- *              OrderCreatedEvent published to Kafka (ASYNC)
- *           -> OrderSagaOrchestrator drives inventory -> payment (SAGA),
- *              compensating on failure (DISTRIBUTED TRANSACTIONS without 2PC)
- *           -> OrderProjection consumes the event log into a read model (CQRS)
- *
- * Meanwhile MaintenanceJobs runs @Scheduled tasks (fixedRate / fixedDelay /
- * cron) on a dedicated ThreadPoolTaskScheduler.
+ * Reads are served from a separate read model built by OrderProjection.
  */
 @SpringBootApplication
-@EnableFeignClients    // scan for @FeignClient interfaces (ProductClient)
-@EnableScheduling      // activate @Scheduled methods (MaintenanceJobs)
+@EnableFeignClients    // picks up ProductClient
+@EnableScheduling      // enables MaintenanceJobs
 public class OrderServiceApplication {
 
     public static void main(String[] args) {

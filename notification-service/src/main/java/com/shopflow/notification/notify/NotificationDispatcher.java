@@ -4,20 +4,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 /**
- * QUALIFIERS - resolving "which bean?" when an interface has many implementations.
+ * Decides which channels a notification goes out on.
  *
- * THE PROBLEM: two beans implement NotificationSender (emailSender, smsSender).
- * Injecting plain `NotificationSender` would fail at startup with
- * NoUniqueBeanDefinitionException - Spring cannot guess.
- *
- * THE OPTIONS (know all three):
- *  - @Qualifier("beanName")  - pick explicitly at the injection point (used here)
- *  - @Primary on one bean    - "the default unless a qualifier says otherwise"
- *  - inject List<NotificationSender> / Map<String, NotificationSender>
- *    - receive ALL of them (great for strategy registries / broadcast)
- *
- * Type-safe upgrade worth mentioning: define a custom annotation
- * (@interface Email, meta-annotated with @Qualifier) instead of a string name.
+ * Two beans implement NotificationSender, so @Qualifier picks the one wanted at
+ * each injection point.
  */
 @Service
 public class NotificationDispatcher {
@@ -31,7 +21,7 @@ public class NotificationDispatcher {
         this.smsSender = smsSender;
     }
 
-    /** Business routing: routine updates -> email; urgent ones -> email + SMS. */
+    /** Routine updates go by email; urgent ones also go by SMS. */
     public void dispatch(String userId, String subject, String body, boolean urgent) {
         emailSender.send(userId, subject, body);
         if (urgent) {

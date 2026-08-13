@@ -1,5 +1,5 @@
 server:
-  port: 8761   # conventional Eureka port
+  port: 8761
 
 spring:
   application:
@@ -7,15 +7,13 @@ spring:
 
 eureka:
   client:
-    # This IS the registry, so it must not try to register with itself
-    # or fetch a registry from anyone else.
+    # This is the registry itself, so it neither registers nor fetches.
     register-with-eureka: false
     fetch-registry: false
   server:
-    # SELF-PRESERVATION: in production Eureka STOPS evicting instances when it
-    # loses too many heartbeats at once, assuming the network - not the services -
-    # is broken. Safer for real clusters, but on a laptop it means dead instances
-    # linger and the gateway keeps routing to them. Off for local development.
+    # Self-preservation stops Eureka evicting instances when many heartbeats are
+    # lost at once. Useful in a cluster, but locally it just keeps dead
+    # instances in the registry, so it is off here.
     enable-self-preservation: false
     eviction-interval-timer-in-ms: 5000
 

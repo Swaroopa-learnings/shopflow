@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import java.util.Set;
 
-/** The logic behind @AllowedCurrency. Null passes: pair with @NotNull to make the field required. */
+/** Implements @AllowedCurrency. Null passes - add @NotNull to require a value. */
 public class AllowedCurrencyValidator implements ConstraintValidator<AllowedCurrency, String> {
 
     private static final Set<String> ALLOWED = Set.of("USD", "EUR", "INR");

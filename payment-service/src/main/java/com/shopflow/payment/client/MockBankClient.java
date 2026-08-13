@@ -10,13 +10,9 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Stand-in for a third-party payment gateway (Stripe/Adyen/a bank).
- * Configurably unreliable so the circuit breaker has something to break on:
- *
- *   app.bank.failure-rate=0.3   -> ~30% of calls throw BankUnavailableException
- *
- * Set it to 1.0 and place a few orders to watch the breaker OPEN in
- * /actuator/circuitbreakers, then recover through HALF_OPEN.
+ * Stand-in for a third-party payment gateway. Fails a configurable share of
+ * calls (app.bank.failure-rate) so the retry and circuit breaker can be seen
+ * working. Set it to 1.0 to force the breaker open.
  */
 @Component
 public class MockBankClient {
@@ -35,9 +31,9 @@ public class MockBankClient {
         this.failureRate = failureRate;
     }
 
-    /** Simulates the remote charge call: some latency, sometimes an outage. */
+    /** Simulates a remote charge: some latency, sometimes a failure. */
     public String charge(UUID orderId, BigDecimal amount) {
-        sleep(ThreadLocalRandom.current().nextLong(50, 200));   // network latency
+        sleep(ThreadLocalRandom.current().nextLong(50, 200));
 
         if (ThreadLocalRandom.current().nextDouble() < failureRate) {
             log.warn("Bank gateway TIMEOUT/ERROR for order {} (simulated)", orderId);

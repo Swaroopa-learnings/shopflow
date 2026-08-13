@@ -21,19 +21,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * JWT SPRING SECURITY integration - the standard recipe:
+ * Verifies the Bearer token and populates the SecurityContext so the request
+ * counts as authenticated. An invalid token leaves the context empty and the
+ * rules in SecurityConfig reject the request.
  *
- *  1. This filter runs early in the security chain (see SecurityConfig).
- *  2. It parses/verifies the Bearer token.
- *  3. On success it populates the thread-bound SecurityContextHolder with an
- *     Authentication object -> Spring Security now considers the request
- *     authenticated, roles become available for @PreAuthorize etc.
- *  4. On failure it simply DOESN'T populate the context; the authorization
- *     rules in SecurityConfig then reject the request with 401/403.
- *
- * DEFENSE IN DEPTH: the gateway already verified this token, but a service
- * must not blindly trust its network - anything that reaches this port
- * directly (a misconfigured firewall, a compromised pod) still hits this check.
+ * The gateway already checks the token; this repeats the check so traffic
+ * reaching the service directly is still verified.
  */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -57,12 +50,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 String role = claims.get("role", String.class);
                 var authentication = new UsernamePasswordAuthenticationToken(
-                        claims.getSubject(),                       // principal = user id
-                        null,                                      // no credentials kept
+                        claims.getSubject(),   // user id
+                        null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role)));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (JwtException ignored) {
-                // Invalid token -> leave context empty; SecurityConfig will 401.
+                // Invalid token: leave the context empty, SecurityConfig returns 401.
             }
         }
         chain.doFilter(request, response);

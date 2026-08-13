@@ -38,11 +38,9 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    # DB_CLOSE_DELAY=-1 keeps the in-memory database alive for the whole JVM
-    # lifetime. WITHOUT it, H2 destroys an in-memory DB the moment the LAST
-    # connection closes - and HikariCP closes idle connections after
-    # idle-timeout. The service then wakes up to "Table not found (this database
-    # is empty)" with no obvious cause. Classic dev-profile trap.
+    # DB_CLOSE_DELAY=-1 keeps the database alive for the life of the JVM.
+    # Without it H2 drops it once the last connection closes, and the service
+    # starts failing with "Table not found (this database is empty)".
     url: jdbc:h2:mem:inventorydb;DB_CLOSE_DELAY=-1
   jpa:
     hibernate:

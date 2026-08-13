@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-/** The second NotificationSender implementation - see NotificationDispatcher for the @Qualifier wiring. */
+/** Sends SMS notifications (logged here rather than actually sent). */
 @Component("smsSender")
 public class SmsNotificationSender implements NotificationSender {
 

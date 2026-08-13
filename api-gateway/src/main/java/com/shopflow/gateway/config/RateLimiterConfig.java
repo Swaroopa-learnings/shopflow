@@ -9,21 +9,11 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 /**
- * RATE LIMITING - key resolution strategy.
+ * Decides whose rate-limit bucket a request counts against: the authenticated
+ * user where there is one, otherwise the client IP.
  *
- * Spring Cloud Gateway's RequestRateLimiter filter (wired per-route in
- * application.yml) implements a TOKEN BUCKET in Redis:
- *   - replenishRate  = tokens added per second (steady-state requests/sec)
- *   - burstCapacity  = bucket size (short bursts allowed above steady rate)
- * When the bucket for a key is empty the gateway answers 429 Too Many Requests.
- *
- * WHY REDIS? The gateway may run as N replicas; keeping counters in Redis makes
- * the limit GLOBAL across all replicas instead of per-instance.
- *
- * The {@link KeyResolver} decides WHOSE bucket a request draws from:
- * here, the authenticated user id (set by JwtAuthenticationGlobalFilter),
- * falling back to client IP for public endpoints. Per-user limiting is fairer
- * than per-IP (corporate NATs share one IP) - a good trade-off to discuss.
+ * The limits themselves are configured per route in application.yml, with the
+ * counters held in Redis so they apply across all gateway instances.
  */
 @Configuration
 public class RateLimiterConfig {

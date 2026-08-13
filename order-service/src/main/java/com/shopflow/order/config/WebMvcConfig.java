@@ -6,8 +6,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Interceptors are NOT auto-registered by @Component alone (unlike Filters) -
- * they must be added to the MVC registry, with optional path patterns.
+ * Registers MVC interceptors. Unlike filters, interceptors are not picked up
+ * by @Component alone - they must be added here.
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -21,6 +21,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(timingInterceptor)
-                .addPathPatterns("/api/**");   // scope it to the API, skip actuator
+                .addPathPatterns("/api/**");   // API only, skip actuator
     }
 }

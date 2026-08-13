@@ -10,15 +10,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 
 /**
- * JPA ENTITY - maps this class to the "app_users" table.
- *
- * JPA vs SPRING DATA JPA (classic interview question):
- *  - JPA is only a SPECIFICATION (annotations + EntityManager API).
- *  - Hibernate is the IMPLEMENTATION Spring Boot auto-configures.
- *  - Spring Data JPA sits ON TOP and generates repository implementations
- *    from interface method names (see UserRepository).
- *
- * Named app_users because "user" is a reserved word in Postgres.
+ * A registered user, mapped to the app_users table.
+ * ("user" is reserved in Postgres, hence the name.)
  */
 @Entity
 @Table(name = "app_users")
@@ -31,14 +24,14 @@ public class AppUser {
     @Column(nullable = false, unique = true)
     private String email;
 
-    /** BCrypt hash - NEVER the raw password. */
+    /** BCrypt hash, never the raw password. */
     @Column(nullable = false)
     private String passwordHash;
 
     @Column(nullable = false)
     private String fullName;
 
-    /** Simple single-role model; embedded into the JWT as a claim. */
+    /** Single role per user, included in the token as a claim. */
     @Column(nullable = false)
     private String role = "CUSTOMER";
 
@@ -46,7 +39,7 @@ public class AppUser {
     private Instant createdAt = Instant.now();
 
     protected AppUser() {
-        // JPA requires a no-arg constructor (Hibernate instantiates via reflection)
+        // required by JPA
     }
 
     public AppUser(String email, String passwordHash, String fullName) {

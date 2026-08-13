@@ -18,28 +18,13 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 /**
- * CIRCUIT BREAKER + RETRY around the flaky bank call.
+ * Charges the customer through the bank gateway, wrapped in a retry and a
+ * circuit breaker so a failing gateway doesn't tie up threads here.
  *
- * WHY: without a breaker, when the bank is down every payment thread blocks on
- * a doomed remote call. Threads pile up, THIS service dies too, then its
- * callers... - a cascading failure. The breaker fails FAST instead, giving
- * the sick dependency room to recover.
- *
- * THE STATE MACHINE (config in application.yml):
- *   CLOSED     normal; calls pass, failures are counted in a sliding window
- *      └─ failure rate >= 50% over last 10 calls -> OPEN
- *   OPEN       calls are rejected IMMEDIATELY (CallNotPermittedException) -
- *              no thread waits on the dead bank; after 10s -> HALF_OPEN
- *   HALF_OPEN  3 trial calls allowed: all good -> CLOSED, any bad -> OPEN
- *
- * ANNOTATION ORDER: @Retry wraps @CircuitBreaker here - each attempt is
- * recorded by the breaker; when the breaker opens mid-retry the retry gives
- * up immediately (CallNotPermittedException is not in retryExceptions).
- *
- * The fallbackMethod is the graceful degradation path: signature = original
- * params + the exception. Our fallback turns the failure into a proper
- * PaymentFailedEvent so the SAGA can compensate - resilience and the saga
- * pattern clicking together.
+ * The breaker opens after too many failures and rejects calls immediately for
+ * a while, then lets a few through to test recovery. Thresholds are in
+ * application.yml. When calls fail or the breaker is open, the fallback
+ * publishes a PaymentFailedEvent so the saga can compensate.
  */
 @Service
 public class PaymentProcessor {
@@ -61,14 +46,14 @@ public class PaymentProcessor {
     @Retry(name = "bankGateway")
     @CircuitBreaker(name = "bankGateway", fallbackMethod = "paymentFallback")
     public void process(ProcessPaymentCommand cmd) {
-        // Idempotent consumer: PK = orderId; a redelivered command must not double-charge.
+        // Order id is the primary key, so a redelivered command can't double-charge.
         if (paymentRepository.existsById(cmd.orderId())) {
-            log.info("Payment for order {} already processed - re-emitting outcome (idempotent)", cmd.orderId());
+            log.info("Payment for order {} already processed - re-emitting outcome", cmd.orderId());
             paymentRepository.findById(cmd.orderId()).ifPresent(this::reEmit);
             return;
         }
 
-        String bankRef = bankClient.charge(cmd.orderId(), cmd.amount());   // may throw -> retry/breaker
+        String bankRef = bankClient.charge(cmd.orderId(), cmd.amount());
 
         paymentRepository.save(Payment.captured(cmd.orderId(), cmd.userId(), cmd.amount(), bankRef));
         kafkaTemplate.send(Topics.PAYMENT_EVENTS, cmd.orderId().toString(),
@@ -76,9 +61,8 @@ public class PaymentProcessor {
     }
 
     /**
-     * FALLBACK - runs when retries are exhausted OR the breaker is OPEN.
-     * Failing a payment is a legitimate business outcome; we record it and let
-     * the saga compensate (release stock, cancel order).
+     * Runs when retries are exhausted or the breaker is open. Records the
+     * failure and lets the saga compensate.
      */
     @SuppressWarnings("unused") // invoked reflectively by Resilience4j
     private void paymentFallback(ProcessPaymentCommand cmd, Throwable cause) {

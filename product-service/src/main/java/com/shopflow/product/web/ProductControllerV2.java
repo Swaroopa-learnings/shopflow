@@ -12,30 +12,24 @@ import java.math.RoundingMode;
 import java.util.Map;
 
 /**
- * V2 API - BACKWARD COMPATIBILITY, part 2.
+ * Version 2 of the catalog API. Adds priceCents and a preformatted
+ * displayPrice; v1 is unaffected.
  *
- * v2 evolved the contract: response gains `displayPrice` (pre-formatted, with
- * currency) and `priceCents` (integer, no floating point ambiguity for
- * clients). v1 keeps serving its original shape untouched - existing clients
- * never notice v2 exists.
- *
- * Note the pattern: BOTH versions delegate to the SAME service layer; only the
- * response mapping differs. Versioning is a presentation concern - never fork
- * business logic per API version.
+ * Both versions call the same service layer - only the response shape differs.
  */
 @RestController
 @RequestMapping("/api/v2/products")
 public class ProductControllerV2 {
 
-    /** v2 response shape - additive evolution of v1's. */
+    /** v2 response: v1's fields plus priceCents and displayPrice. */
     public record ProductResponseV2(
             String id,
             String name,
             String description,
             String category,
             BigDecimal price,
-            long priceCents,        // NEW in v2
-            String displayPrice,    // NEW in v2
+            long priceCents,
+            String displayPrice,
             Map<String, String> attributes
     ) {
         static ProductResponseV2 from(Product p) {

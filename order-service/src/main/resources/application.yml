@@ -5,10 +5,7 @@ spring:
   application:
     name: order-service
   profiles:
-    # SPRING PROFILES: same binary, different environment wiring.
-    # 'dev' (default) = H2 in-memory, verbose SQL logging.
-    # 'prod'          = Postgres + tuned HikariCP (see application-prod.yml).
-    # Activate with: SPRING_PROFILES_ACTIVE=prod  or  --spring.profiles.active=prod
+    # dev = H2 in memory, prod = Postgres. Override with SPRING_PROFILES_ACTIVE.
     default: dev
 
   data:
@@ -16,25 +13,20 @@ spring:
       host: localhost
       port: 6379
 
-  # ---------------------------------------------------------------------------
-  # KAFKA - producer + consumer, JSON (de)serialization.
-  # ---------------------------------------------------------------------------
+  # Kafka producer and consumer, using JSON serialization.
   kafka:
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      # acks=all: leader waits for in-sync replicas before confirming - durability
-      # over latency for order events. (Single-broker demo, but the right habit.)
+      # Wait for the replicas to confirm before treating a send as successful.
       acks: all
     consumer:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       auto-offset-reset: earliest
       properties:
-        # JsonDeserializer instantiates classes named in the __TypeId__ header the
-        # producer wrote - only packages we trust are allowed (deserialization
-        # of arbitrary classes is an RCE vector).
+        # Only deserialize into our own event classes.
         spring.json.trusted.packages: com.shopflow.common.events
 
 eureka:
@@ -47,17 +39,9 @@ eureka:
 
 app:
   jwt:
-    secret: "change-me-shopflow-demo-secret-key-32b!"   # must match auth-service/gateway
+    secret: "change-me-shopflow-demo-secret-key-32b!"   # must match auth-service and gateway
 
-# -----------------------------------------------------------------------------
-# ACTUATOR - production-readiness endpoints.
-#   /actuator/health      liveness/readiness (used by K8s probes & LB checks)
-#   /actuator/metrics     Micrometer metrics (JVM, HTTP, Hikari pool, Kafka)
-#   /actuator/prometheus  same metrics in Prometheus scrape format
-#   /actuator/env         effective configuration (secrets are masked)
-# Exposure is opt-in per endpoint: never blanket-expose in production ("*" +
-# no auth on actuator = classic security-audit finding).
-# -----------------------------------------------------------------------------
+# Actuator endpoints. Exposure is opt-in per endpoint.
 management:
   endpoints:
     web:
@@ -69,8 +53,7 @@ management:
 
 logging:
   pattern:
-    # %X{correlationId} pulls the id set by RequestLoggingFilter from the MDC -
-    # every line of one request shares the same [id], greppable end-to-end.
+    # %X{correlationId} prints the id set by RequestLoggingFilter.
     console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId:-}] %-5level %logger{36} - %msg%n"
   level:
     com.shopflow.order: DEBUG

@@ -9,17 +9,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * Dedicated executor for @Async("notificationExecutor") methods.
+ * Thread pool for @Async notification sending.
  *
- * ThreadPoolTaskExecutor mechanics (interview staple):
- *   new task -> core threads busy? -> QUEUE it -> queue full? -> grow to max
- *   -> at max AND queue full? -> RejectedExecutionHandler decides.
- * CallerRunsPolicy = the submitting (Kafka listener) thread runs the task
- * itself - natural BACKPRESSURE: intake slows instead of dropping
- * notifications or dying with OOM from an unbounded queue.
+ * Tasks queue when the core threads are busy and the pool grows to max if the
+ * queue fills. CallerRunsPolicy then makes the submitting thread run the task,
+ * which slows intake instead of dropping notifications.
  */
 @Configuration
-@EnableAsync   // without this, @Async is a silent no-op
+@EnableAsync   // required, otherwise @Async does nothing
 public class AsyncConfig {
 
     @Bean(name = "notificationExecutor")

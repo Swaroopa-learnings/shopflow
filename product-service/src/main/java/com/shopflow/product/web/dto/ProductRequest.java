@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.Map;
 
-/** Request validation for creating/updating catalog entries. */
+/** Body for creating or updating a product. */
 public record ProductRequest(
 
         @NotBlank(message = "name is required")

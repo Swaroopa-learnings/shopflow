@@ -11,11 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import java.math.BigDecimal;
 import java.util.Map;
 
-/**
- * Seeds demo products on startup so the curl walkthrough in the README works
- * immediately. CommandLineRunner beans execute once the ApplicationContext is
- * fully ready.
- */
+/** Seeds demo products on startup if the catalog is empty. */
 @Configuration
 public class DataSeeder {
 
@@ -25,7 +21,7 @@ public class DataSeeder {
     CommandLineRunner seedProducts(ProductRepository repo) {
         return args -> {
             if (repo.count() > 0) {
-                return;   // idempotent: don't duplicate on restart
+                return;   // don't duplicate on restart
             }
             Product laptop = new Product("ThinkBook 14", "14-inch developer laptop",
                     "electronics", new BigDecimal("899.99"),
@@ -39,7 +35,6 @@ public class DataSeeder {
 
             Product tshirt = new Product("ShopFlow Tee", "Cotton t-shirt",
                     "apparel", new BigDecimal("19.99"),
-                    // Different attributes than electronics - the document-store advantage.
                     Map.of("size", "L", "color", "navy"));
             tshirt.setId("p-1003");
 

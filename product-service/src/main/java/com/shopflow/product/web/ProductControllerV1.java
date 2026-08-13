@@ -11,17 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * V1 API - BACKWARD COMPATIBILITY, part 1.
- *
- * THE RULE: once clients depend on an API you may only make ADDITIVE changes.
- * Renaming/removing fields, changing types, or changing semantics BREAKS
- * callers you don't control (mobile apps in the field, partner integrations).
- *
- * When a breaking change is unavoidable, you version the API and run BOTH
- * versions side by side (this class + ProductControllerV2), migrate clients,
- * then sunset v1 after a deprecation window. URL versioning (/api/v1/..) is
- * used here because it's explicit and cache/proxy friendly; header or
- * media-type versioning are the common alternatives.
+ * Version 1 of the catalog API, kept unchanged for existing clients while v2
+ * serves the newer response shape.
  */
 @RestController
 @RequestMapping("/api/v1/products")
@@ -33,7 +24,7 @@ public class ProductControllerV1 {
         this.service = service;
     }
 
-    /** v1 exposes the raw document - the shape v1 clients were built against. */
+    /** Returns the stored document as-is. */
     @GetMapping("/{id}")
     public Product get(@PathVariable String id) {
         return service.getProduct(id);
