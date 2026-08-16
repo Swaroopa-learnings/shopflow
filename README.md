@@ -98,10 +98,9 @@ curl -s -X POST localhost:8080/api/v1/orders \
   -H 'Idempotency-Key: demo-1' \
   -d '{"productId":"p-1002","quantity":1,"currency":"USD"}'
 
-# outcome, full event history, and state replayed from those events
+# outcome, and the full event history behind it
 curl -s localhost:8080/api/v1/orders/<orderId>          -H "Authorization: Bearer $TOKEN"
 curl -s localhost:8080/api/v1/orders/<orderId>/events   -H "Authorization: Bearer $TOKEN"
-curl -s localhost:8080/api/v1/orders/<orderId>/rebuilt  -H "Authorization: Bearer $TOKEN"
 ```
 
 Order creation returns `202 Accepted` with status `PENDING`. The saga resolves
@@ -124,7 +123,7 @@ it to `COMPLETED` or `CANCELLED` a moment later.
 | Topic | Files |
 |---|---|
 | Saga orchestration and compensation | [OrderSagaOrchestrator](order-service/src/main/java/com/shopflow/order/saga/OrderSagaOrchestrator.java), [InventoryService](inventory-service/src/main/java/com/shopflow/inventory/service/InventoryService.java) |
-| Event store and replay | [EventStoreService](order-service/src/main/java/com/shopflow/order/command/EventStoreService.java), [OrderEventEntity](order-service/src/main/java/com/shopflow/order/domain/OrderEventEntity.java), [OrderAggregate](order-service/src/main/java/com/shopflow/order/query/OrderAggregate.java) |
+| Event store and replay | [EventStoreService](order-service/src/main/java/com/shopflow/order/command/EventStoreService.java), [OrderEventEntity](order-service/src/main/java/com/shopflow/order/domain/OrderEventEntity.java), [OrderAggregate](order-service/src/test/java/com/shopflow/order/query/OrderAggregate.java) (test-only replay) |
 | Command and query separation | [OrderCommandService](order-service/src/main/java/com/shopflow/order/command/OrderCommandService.java), [OrderProjection](order-service/src/main/java/com/shopflow/order/query/OrderProjection.java), [OrderQueryController](order-service/src/main/java/com/shopflow/order/query/OrderQueryController.java) |
 | Idempotency | [IdempotencyFilter](order-service/src/main/java/com/shopflow/order/web/filter/IdempotencyFilter.java), [Reservation](inventory-service/src/main/java/com/shopflow/inventory/domain/Reservation.java), [Payment](payment-service/src/main/java/com/shopflow/payment/domain/Payment.java) |
 | Circuit breaker and retry | [PaymentProcessor](payment-service/src/main/java/com/shopflow/payment/service/PaymentProcessor.java), [payment config](payment-service/src/main/resources/application.yml) |
@@ -158,6 +157,13 @@ to a different store without touching order creation.
 **Consumers are idempotent.** Kafka delivers at least once, so reservations and
 payments use the order id as their primary key and a redelivered command is
 recognised rather than applied twice.
+
+## Review log
+
+[docs/review-log.md](docs/review-log.md) documents three defects found while
+running the system — including consumers that read every message and silently
+did nothing — how each was diagnosed, and the design change made afterwards. It
+ends with a review checklist for event-driven code.
 
 ## Known gaps
 

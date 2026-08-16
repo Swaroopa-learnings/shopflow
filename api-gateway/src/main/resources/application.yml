@@ -59,4 +59,4 @@ management:
 
 logging:
   level:
-    com.shopflow.gateway: DEBUG
+    com.shopflow.gateway: INFO

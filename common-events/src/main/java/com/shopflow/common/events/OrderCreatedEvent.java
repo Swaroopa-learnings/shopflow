@@ -16,10 +16,11 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record OrderCreatedEvent(
         UUID orderId,
+
         String userId,
         String productId,
         int quantity,
         BigDecimal totalAmount,
         Instant occurredAt
-) {
+) implements OrderEvent {
 }

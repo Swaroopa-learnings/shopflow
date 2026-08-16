@@ -54,13 +54,14 @@ public class OrderCommandService {
         orderRepository.save(new OrderEntity(orderId, userId, request.productId(),
                 request.quantity(), total));
 
-        eventStore.appendAndPublish(orderId, new OrderCreatedEvent(
+        eventStore.appendAndPublish(new OrderCreatedEvent(
                 orderId, userId, request.productId(), request.quantity(), total, Instant.now()));
+
 
         // Saga step 1: ask inventory-service to reserve stock.
         kafkaTemplate.send(Topics.INVENTORY_COMMANDS, orderId.toString(),
                 new ReserveInventoryCommand(orderId, request.productId(), request.quantity()));
-
+        log.info("Sent command to inventory to reserve stock");
         log.info("Order {} created for user {} (total {}), saga started", orderId, userId, total);
         return orderId;
     }

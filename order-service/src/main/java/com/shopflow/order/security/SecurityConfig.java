@@ -36,5 +36,5 @@ public class SecurityConfig {
                 // Authenticate from the JWT before the authorization rules run.
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
-    }
+    }//
 }

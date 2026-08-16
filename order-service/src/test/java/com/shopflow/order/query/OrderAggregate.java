@@ -13,8 +13,14 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Rebuilds an order's current state by replaying its stored events.
- * No table is read - state is derived purely from the event history.
+ * Rebuilds an order's state by replaying its stored events, deriving it purely
+ * from the history with no table read.
+ *
+ * Test-only. This used to be exposed as an endpoint, but it returned the same
+ * answer as GET /{id} by a different route, so it was not a feature anyone
+ * needed. It is kept here because it verifies something worth guaranteeing:
+ * the read model and the event log must agree. If they diverge, either the
+ * projection has a bug or events went missing.
  */
 public class OrderAggregate {
 

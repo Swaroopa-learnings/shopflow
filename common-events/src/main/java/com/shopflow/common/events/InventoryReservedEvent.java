@@ -10,5 +10,5 @@ public record InventoryReservedEvent(
         UUID orderId,
         String productId,
         int quantity
-) {
+) implements InventoryReply {
 }

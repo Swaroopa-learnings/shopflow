@@ -20,8 +20,7 @@ import java.util.UUID;
  * Read side of the order API. Serves the read model only, never the write
  * tables, and has no service layer because it holds no business rules.
  *
- * Also exposes /{id}/events (the stored history) and /{id}/rebuilt (state
- * recomputed by replaying that history).
+ * Also exposes /{id}/events, the stored history for an order.
  */
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -62,16 +61,6 @@ public class OrderQueryController {
                         "payload", parse(e),
                         "occurredAt", e.getOccurredAt().toString()))
                 .toList();
-    }
-
-    /** State REBUILT purely from events - event sourcing's party trick. */
-    @GetMapping("/{id}/rebuilt")
-    public ResponseEntity<OrderAggregate> rebuild(@PathVariable UUID id) {
-        List<OrderEventEntity> events = eventRepository.findByOrderIdOrderBySeqNoAsc(id);
-        if (events.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(OrderAggregate.replay(events, objectMapper));
     }
 
     private Object parse(OrderEventEntity e) {

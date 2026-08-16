@@ -15,5 +15,5 @@ public record OrderCancelledEvent(
         String userId,
         String reason,
         Instant occurredAt
-) {
+) implements OrderEvent {
 }

@@ -44,6 +44,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         // Only POSTs need guarding; GETs are already idempotent.
+        log.info("In shouldNotFilter of IdempotencyFilter of order-service");
         return !("POST".equals(request.getMethod())
                 && request.getRequestURI().startsWith("/api/v1/orders"));
     }
@@ -52,6 +53,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
 
+        log.info("In doFilterInternal of IdempotencyFilter of order-service");
         String key = request.getHeader(HEADER);
         if (key == null || key.isBlank()) {
             // Header is optional here; payment APIs usually require it.

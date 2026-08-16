@@ -48,6 +48,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        log.info("In JwtAuthenticationGlobalFilter");
         String path = exchange.getRequest().getURI().getPath();
 
         if (isPublic(path)) {
@@ -71,6 +72,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
             ServerHttpRequest mutated = exchange.getRequest().mutate()
                     .header("X-User-Id", claims.getSubject())
                     .build();
+            log.info("In JwtAuthenticationGlobalFilter and returning with X_User-Id {} in headers",claims.getSubject());
             return chain.filter(exchange.mutate().request(mutated).build());
 
         } catch (JwtException e) {

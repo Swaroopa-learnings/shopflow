@@ -71,7 +71,7 @@ public class MaintenanceJobs {
             kafkaTemplate.send(Topics.INVENTORY_COMMANDS, order.getId().toString(),
                     new ReleaseInventoryCommand(order.getId(),"saga timeout"));
             order.transitionTo(OrderStatus.CANCELLED);
-            eventStore.appendAndPublish(order.getId(), new OrderCancelledEvent(
+            eventStore.appendAndPublish(new OrderCancelledEvent(
                     order.getId(), order.getUserId(), "saga timeout", Instant.now()));
         }
     }

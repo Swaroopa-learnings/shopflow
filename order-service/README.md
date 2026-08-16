@@ -15,7 +15,7 @@ orchestrates the fulfillment saga across inventory- and payment-service.
 
 **Core patterns**
 - CQRS — write: [`OrderCommandService`](src/main/java/com/shopflow/order/command/OrderCommandService.java) · read: [`OrderProjection`](src/main/java/com/shopflow/order/query/OrderProjection.java) → [`OrderQueryController`](src/main/java/com/shopflow/order/query/OrderQueryController.java)
-- Event sourcing — [`OrderEventEntity`](src/main/java/com/shopflow/order/domain/OrderEventEntity.java) (append-only store), [`EventStoreService`](src/main/java/com/shopflow/order/command/EventStoreService.java) (store + publish, dual-write/outbox discussion), [`OrderAggregate`](src/main/java/com/shopflow/order/query/OrderAggregate.java) (state = fold(events))
+- Event sourcing — [`OrderEventEntity`](src/main/java/com/shopflow/order/domain/OrderEventEntity.java) (append-only store), [`EventStoreService`](src/main/java/com/shopflow/order/command/EventStoreService.java) (store + publish, dual-write/outbox discussion), [`OrderAggregate`](src/test/java/com/shopflow/order/query/OrderAggregate.java) (test-only: proves state is derivable from the log)
 - Saga orchestration — [`OrderSagaOrchestrator`](src/main/java/com/shopflow/order/saga/OrderSagaOrchestrator.java) (compensation, orchestration vs choreography, why not 2PC)
 - Sync call — [`ProductClient`](src/main/java/com/shopflow/order/client/ProductClient.java) (Feign via Eureka; sync-vs-async rules)
 
@@ -32,7 +32,6 @@ orchestrates the fulfillment saga across inventory- and payment-service.
 | GET | `/api/v1/orders/{id}` | query (read model) |
 | GET | `/api/v1/orders` | query — my orders |
 | GET | `/api/v1/orders/{id}/events` | event history (audit log) |
-| GET | `/api/v1/orders/{id}/rebuilt` | state replayed purely from events |
 
 ## Poke it
 

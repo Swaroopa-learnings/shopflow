@@ -23,6 +23,7 @@ public class TimingInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        log.info("In preHandle of TimingInterceptor of order-service");
         request.setAttribute(START_ATTR, System.nanoTime());
         return true;   // false would stop the request here
     }
@@ -30,6 +31,7 @@ public class TimingInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
                                 Object handler, Exception ex) {
+        log.info("In afterCompletion of TimingInterceptor of order-service");
         Object start = request.getAttribute(START_ATTR);
         if (start instanceof Long s && handler instanceof HandlerMethod method) {
             long ms = (System.nanoTime() - s) / 1_000_000;

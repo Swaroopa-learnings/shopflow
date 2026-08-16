@@ -1,6 +1,7 @@
 package com.shopflow.inventory.service;
 
 import com.shopflow.common.events.InventoryRejectedEvent;
+import com.shopflow.common.events.InventoryReply;
 import com.shopflow.common.events.InventoryReservedEvent;
 import com.shopflow.common.events.ReleaseInventoryCommand;
 import com.shopflow.common.events.ReserveInventoryCommand;
@@ -79,7 +80,8 @@ public class InventoryService {
         );
     }
 
-    private void reply(Object event) {
+    /** Only a real inventory outcome can be published, not any object. */
+    private void reply(InventoryReply event) {
         kafkaTemplate.send(Topics.INVENTORY_EVENTS, event);
     }
 }

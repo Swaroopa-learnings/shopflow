@@ -11,5 +11,5 @@ public record OrderCompletedEvent(
         UUID orderId,
         String userId,
         Instant occurredAt
-) {
+) implements OrderEvent {
 }

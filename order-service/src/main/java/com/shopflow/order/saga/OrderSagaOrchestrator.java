@@ -96,7 +96,7 @@ public class OrderSagaOrchestrator {
                 return;
             }
             order.transitionTo(OrderStatus.COMPLETED);
-            eventStore.appendAndPublish(order.getId(),
+            eventStore.appendAndPublish(
                     new OrderCompletedEvent(order.getId(), order.getUserId(), Instant.now()));
             log.info("Saga[{}]: COMPLETED (payment ref {})", order.getId(), completed.paymentReference());
         });
@@ -127,7 +127,7 @@ public class OrderSagaOrchestrator {
                 return;   // terminal states are final
             }
             order.transitionTo(OrderStatus.CANCELLED);
-            eventStore.appendAndPublish(order.getId(),
+            eventStore.appendAndPublish(
                     new OrderCancelledEvent(order.getId(), order.getUserId(), reason, Instant.now()));
             log.info("Saga[{}]: CANCELLED ({})", orderId, reason);
         });
