@@ -179,9 +179,9 @@ ends with a review checklist for event-driven code.
 
 ## Diagrams
 
-`docs/` holds the architecture diagram above, an e-commerce reference
-architecture, and a general microservices request-flow diagram, each as SVG
-and PNG.
+`docs/` holds the architecture diagram above (`architecture.svg` is the
+editable source of `shopflow-architecture.png`) and the create-order flow
+diagram (`create-order-flow.svg`).
 
 ## License
 
