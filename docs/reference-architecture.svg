@@ -1,0 +1,189 @@
+<svg viewBox="0 0 1600 1000" width="1600" height="1000" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#F59E0B"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1000" fill="#0B1220"/>
+
+  <!-- ============ HEADER ============ -->
+  <text x="70" y="66" font-size="36" font-weight="700" fill="#FFFFFF">E-Commerce Microservices<tspan fill="#94A3B8" font-weight="400" font-size="28">  ·  Reference Architecture</tspan></text>
+  <text x="70" y="100" font-size="15" fill="#7C8AA5">Edge gateway · Domain services · Event-driven backbone · Polyglot persistence · Cross-cutting platform&#160;&#160;—&#160;&#160;the blueprint behind resilient, independently deployable commerce backends</text>
+
+  <!-- ============ CLIENTS ============ -->
+  <rect x="60" y="360" width="150" height="150" rx="14" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="135" y="392" font-size="17" font-weight="700" fill="#E2E8F0" text-anchor="middle">Clients</text>
+  <text x="135" y="420" font-size="12.5" fill="#CBD5E1" text-anchor="middle">Web storefront</text>
+  <text x="135" y="442" font-size="12.5" fill="#CBD5E1" text-anchor="middle">Mobile apps</text>
+  <text x="135" y="464" font-size="12.5" fill="#CBD5E1" text-anchor="middle">Partner APIs</text>
+  <text x="135" y="492" font-size="11" fill="#7C8AA5" text-anchor="middle">one public endpoint</text>
+
+  <!-- clients -> gateway -->
+  <line x1="210" y1="435" x2="264" y2="435" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="237" y="424" font-size="11" fill="#7C8AA5" text-anchor="middle">HTTPS</text>
+
+  <!-- ============ API GATEWAY ============ -->
+  <rect x="270" y="330" width="230" height="210" rx="14" fill="#16233A" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="290" y="362" font-size="18" font-weight="700" fill="#38BDF8">API Gateway</text>
+  <text x="290" y="390" font-size="13" fill="#CBD5E1">TLS termination</text>
+  <text x="290" y="412" font-size="13" fill="#CBD5E1">AuthN at the edge (JWT / OIDC)</text>
+  <text x="290" y="434" font-size="13" fill="#CBD5E1">Rate limiting &amp; quotas</text>
+  <text x="290" y="456" font-size="13" fill="#CBD5E1">Routing + load balancing</text>
+  <text x="290" y="478" font-size="13" fill="#CBD5E1">Cross-cutting once, not per service</text>
+  <text x="290" y="516" font-size="11.5" fill="#7C8AA5">single front door — internal</text>
+  <text x="290" y="532" font-size="11.5" fill="#7C8AA5">topology stays free to change</text>
+
+  <!-- gateway -> services -->
+  <line x1="500" y1="400" x2="552" y2="368" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="524" y="418" font-size="11" fill="#7C8AA5" text-anchor="middle">sync</text>
+
+  <!-- ============ DOMAIN SERVICES ============ -->
+  <text x="562" y="155" font-size="14" font-weight="700" fill="#94A3B8" letter-spacing="1">DOMAIN SERVICES&#160;&#160;<tspan font-weight="400" fill="#526079">— bounded contexts, independently deployable, database per service</tspan></text>
+
+  <!-- Identity -->
+  <rect x="560" y="175" width="200" height="120" rx="14" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="578" y="203" font-size="15.5" font-weight="700" fill="#A5B4FC">Identity &amp; Access</text>
+  <text x="578" y="226" font-size="12" fill="#CBD5E1">Registration · login</text>
+  <text x="578" y="245" font-size="12" fill="#CBD5E1">Issues signed tokens</text>
+  <rect x="578" y="260" width="60" height="19" rx="9.5" fill="#101B2E" stroke="#3B82F6"/><text x="608" y="273" font-size="10" fill="#60A5FA" text-anchor="middle">SQL DB</text>
+
+  <!-- Catalog -->
+  <rect x="780" y="175" width="200" height="120" rx="14" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="798" y="203" font-size="15.5" font-weight="700" fill="#A5B4FC">Product Catalog</text>
+  <text x="798" y="226" font-size="12" fill="#CBD5E1">Read-heavy · versioned API</text>
+  <text x="798" y="245" font-size="12" fill="#CBD5E1">Cache-aside reads</text>
+  <rect x="798" y="260" width="78" height="19" rx="9.5" fill="#0E1F1A" stroke="#10B981"/><text x="837" y="273" font-size="10" fill="#34D399" text-anchor="middle">Document DB</text>
+  <rect x="884" y="260" width="52" height="19" rx="9.5" fill="#1F1214" stroke="#EF4444"/><text x="910" y="273" font-size="10" fill="#F87171" text-anchor="middle">Cache</text>
+
+  <!-- Orders -->
+  <rect x="1000" y="175" width="200" height="120" rx="14" fill="#182742" stroke="#818CF8" stroke-width="2"/>
+  <text x="1018" y="203" font-size="15.5" font-weight="700" fill="#C7D2FE">Order Management</text>
+  <text x="1018" y="226" font-size="12" fill="#E2E8F0">Saga orchestrator</text>
+  <text x="1018" y="245" font-size="12" fill="#E2E8F0">CQRS + event-sourced log</text>
+  <rect x="1018" y="260" width="60" height="19" rx="9.5" fill="#101B2E" stroke="#3B82F6"/><text x="1048" y="273" font-size="10" fill="#60A5FA" text-anchor="middle">SQL DB</text>
+  <rect x="1086" y="260" width="52" height="19" rx="9.5" fill="#1F1214" stroke="#EF4444"/><text x="1112" y="273" font-size="10" fill="#F87171" text-anchor="middle">Cache</text>
+
+  <!-- Inventory -->
+  <rect x="560" y="320" width="200" height="120" rx="14" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="578" y="348" font-size="15.5" font-weight="700" fill="#A5B4FC">Inventory</text>
+  <text x="578" y="371" font-size="12" fill="#CBD5E1">Reserve / release stock</text>
+  <text x="578" y="390" font-size="12" fill="#CBD5E1">Compensating actions</text>
+  <rect x="578" y="405" width="60" height="19" rx="9.5" fill="#101B2E" stroke="#3B82F6"/><text x="608" y="418" font-size="10" fill="#60A5FA" text-anchor="middle">SQL DB</text>
+
+  <!-- Payment -->
+  <rect x="780" y="320" width="200" height="120" rx="14" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="798" y="348" font-size="15.5" font-weight="700" fill="#A5B4FC">Payment</text>
+  <text x="798" y="371" font-size="12" fill="#CBD5E1">PSP integration behind</text>
+  <text x="798" y="390" font-size="12" fill="#CBD5E1">circuit breaker + retries</text>
+  <rect x="798" y="405" width="60" height="19" rx="9.5" fill="#101B2E" stroke="#3B82F6"/><text x="828" y="418" font-size="10" fill="#60A5FA" text-anchor="middle">SQL DB</text>
+
+  <!-- Notification -->
+  <rect x="1000" y="320" width="200" height="120" rx="14" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="1018" y="348" font-size="15.5" font-weight="700" fill="#A5B4FC">Notification</text>
+  <text x="1018" y="371" font-size="12" fill="#CBD5E1">Email / SMS / push</text>
+  <text x="1018" y="390" font-size="12" fill="#CBD5E1">Pure event consumer —</text>
+  <text x="1018" y="408" font-size="12" fill="#CBD5E1">added with zero producer changes</text>
+
+
+  <!-- ============ EVENT BUS ============ -->
+  <rect x="560" y="500" width="640" height="58" rx="12" fill="#2A2008" stroke="#F59E0B" stroke-width="2"/>
+  <text x="880" y="525" font-size="16" font-weight="700" fill="#FCD34D" text-anchor="middle">Event Bus  —  Kafka (events &amp; commands)</text>
+  <text x="880" y="546" font-size="11.5" fill="#B4915A" text-anchor="middle">order events · inventory commands/replies · payment commands/replies — sagas, projections, fan-out</text>
+
+  <!-- bus arrows -->
+  <line x1="660" y1="440" x2="660" y2="494" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="690" y1="494" x2="690" y2="446" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="880" y1="440" x2="880" y2="494" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="910" y1="494" x2="910" y2="446" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="1115" y1="494" x2="1115" y2="446" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <text x="1130" y="478" font-size="11.5" fill="#B4915A">publish / subscribe</text>
+
+  <!-- saga note -->
+  <text x="560" y="588" font-size="12.5" fill="#94A3B8">Distributed transactions = <tspan fill="#FCD34D">sagas</tspan>: local ACID transactions + compensating events — no 2PC</text>
+
+  <!-- ============ DATA / EXTEND STRIP ============ -->
+  <text x="562" y="640" font-size="14" font-weight="700" fill="#94A3B8" letter-spacing="1">POLYGLOT PERSISTENCE&#160;&#160;<tspan font-weight="400" fill="#526079">— pick the store that fits each service's access pattern</tspan></text>
+
+  <rect x="560" y="660" width="200" height="100" rx="14" fill="#101B2E" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="578" y="688" font-size="14" font-weight="700" fill="#60A5FA">Relational (SQL)</text>
+  <text x="578" y="710" font-size="11.5" fill="#CBD5E1">Orders, payments, stock —</text>
+  <text x="578" y="728" font-size="11.5" fill="#CBD5E1">ACID where money moves.</text>
+  <text x="578" y="746" font-size="11.5" fill="#7C8AA5">One schema per service.</text>
+
+  <rect x="780" y="660" width="200" height="100" rx="14" fill="#0E1F1A" stroke="#10B981" stroke-width="1.5"/>
+  <text x="798" y="688" font-size="14" font-weight="700" fill="#34D399">Document (NoSQL)</text>
+  <text x="798" y="710" font-size="11.5" fill="#CBD5E1">Catalog — flexible per-category</text>
+  <text x="798" y="728" font-size="11.5" fill="#CBD5E1">attributes, no migrations,</text>
+  <text x="798" y="746" font-size="11.5" fill="#CBD5E1">scales reads horizontally.</text>
+
+  <rect x="1000" y="660" width="200" height="100" rx="14" fill="#1F1214" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="1018" y="688" font-size="14" font-weight="700" fill="#F87171">In-memory (Redis)</text>
+  <text x="1018" y="710" font-size="11.5" fill="#CBD5E1">Shared cache · rate-limit</text>
+  <text x="1018" y="728" font-size="11.5" fill="#CBD5E1">buckets · idempotency keys —</text>
+  <text x="1018" y="746" font-size="11.5" fill="#CBD5E1">consistent across replicas.</text>
+
+  <!-- extend strip -->
+  <rect x="560" y="790" width="640" height="52" rx="12" fill="none" stroke="#2E4468" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="880" y="812" font-size="13" fill="#94A3B8" text-anchor="middle">Extends naturally — each is just another bounded context on the same backbone:</text>
+  <text x="880" y="831" font-size="12.5" fill="#7C8AA5" text-anchor="middle">Cart &amp; Checkout · Search (Elasticsearch) · Shipping · Reviews · Recommendations · Loyalty</text>
+
+  <!-- ============ RIGHT PANEL ============ -->
+  <rect x="1255" y="140" width="305" height="702" rx="16" fill="#111C30" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="1280" y="176" font-size="16" font-weight="700" fill="#FFFFFF">Cross-cutting platform</text>
+
+  <g font-size="12.5" fill="#CBD5E1">
+    <text x="1280" y="206" font-weight="600" fill="#38BDF8">Service discovery</text>
+    <text x="1280" y="224" fill="#7C8AA5">instances found by name, not IP</text>
+
+    <text x="1280" y="252" font-weight="600" fill="#38BDF8">Externalized config</text>
+    <text x="1280" y="270" fill="#7C8AA5">same build, per-env profiles</text>
+
+    <text x="1280" y="298" font-weight="600" fill="#38BDF8">Observability</text>
+    <text x="1280" y="316" fill="#7C8AA5">health checks · metrics · correlated</text>
+    <text x="1280" y="333" fill="#7C8AA5">logs · distributed traces</text>
+
+    <text x="1280" y="361" font-weight="600" fill="#38BDF8">Secrets management</text>
+    <text x="1280" y="379" fill="#7C8AA5">credentials injected, never in git</text>
+
+    <text x="1280" y="407" font-weight="600" fill="#38BDF8">CI/CD → containers → K8s</text>
+    <text x="1280" y="425" fill="#7C8AA5">each service ships independently</text>
+
+    <text x="1280" y="453" font-weight="600" fill="#38BDF8">Service mesh (optional)</text>
+    <text x="1280" y="471" fill="#7C8AA5">mTLS, retries, canary — in the</text>
+    <text x="1280" y="488" fill="#7C8AA5">platform, out of application code</text>
+  </g>
+
+  <line x1="1280" y1="514" x2="1535" y2="514" stroke="#2E4468" stroke-width="1"/>
+  <text x="1280" y="544" font-size="16" font-weight="700" fill="#FFFFFF">Design principles</text>
+
+  <g font-size="12.5">
+    <circle cx="1291" cy="574" r="10" fill="#F59E0B"/><text x="1291" y="579" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">1</text>
+    <text x="1310" y="579" fill="#CBD5E1">Database per service — no shared tables</text>
+
+    <circle cx="1291" cy="608" r="10" fill="#F59E0B"/><text x="1291" y="613" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">2</text>
+    <text x="1310" y="613" fill="#CBD5E1">Query sync, command async</text>
+
+    <circle cx="1291" cy="642" r="10" fill="#F59E0B"/><text x="1291" y="647" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">3</text>
+    <text x="1310" y="647" fill="#CBD5E1">Sagas over 2PC — compensate, don't lock</text>
+
+    <circle cx="1291" cy="676" r="10" fill="#F59E0B"/><text x="1291" y="681" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">4</text>
+    <text x="1310" y="681" fill="#CBD5E1">Idempotency at every boundary</text>
+
+    <circle cx="1291" cy="710" r="10" fill="#F59E0B"/><text x="1291" y="715" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">5</text>
+    <text x="1310" y="715" fill="#CBD5E1">Fail fast: timeouts, retries, breakers</text>
+
+    <circle cx="1291" cy="744" r="10" fill="#F59E0B"/><text x="1291" y="749" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">6</text>
+    <text x="1310" y="749" fill="#CBD5E1">Additive-only API &amp; event evolution</text>
+
+    <circle cx="1291" cy="778" r="10" fill="#F59E0B"/><text x="1291" y="783" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">7</text>
+    <text x="1310" y="783" fill="#CBD5E1">Eventual consistency is a feature —</text>
+    <text x="1310" y="800" fill="#7C8AA5">every intermediate state is explicit</text>
+  </g>
+
+  <!-- footer -->
+  <text x="70" y="972" font-size="13" fill="#526079">Reference architecture — technology-agnostic; swap Kafka/Redis/SQL for your stack of choice. The patterns, not the products, are the architecture.</text>
+</svg>

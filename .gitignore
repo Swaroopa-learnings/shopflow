@@ -15,3 +15,8 @@ target/
 # Logs & local env
 *.log
 .env
+
+# Diagram PNGs are generated from the .svg sources in docs/.
+# Only the architecture diagram is committed, because the README embeds it.
+docs/*.png
+!docs/shopflow-architecture.png

@@ -1,0 +1,197 @@
+<svg viewBox="0 0 1600 1120" width="1600" height="1120" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#F59E0B"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#10B981"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1120" fill="#0B1220"/>
+
+  <!-- HEADER -->
+  <text x="70" y="60" font-size="32" font-weight="700" fill="#FFFFFF">POST /api/v1/orders<tspan font-size="26" font-weight="400" fill="#94A3B8">  ·  every path a request can take</tspan></text>
+  <text x="70" y="92" font-size="14" fill="#7C8AA5">The response returns as soon as the order is recorded. Fulfilment continues afterwards over Kafka, and can still end in cancellation.</text>
+
+  <!-- ============ SYNCHRONOUS LANE ============ -->
+  <rect x="60" y="126" width="660" height="668" rx="14" fill="#0F1A2E" stroke="#2E4468" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="84" y="156" font-size="14" font-weight="700" fill="#38BDF8" letter-spacing="0.5">SYNCHRONOUS — the caller is waiting</text>
+
+  <!-- steps -->
+  <rect x="88" y="176" width="310" height="44" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="106" y="196" font-size="13" fill="#E2E8F0">Client sends the order request</text>
+  <text x="106" y="212" font-size="11" fill="#7C8AA5">Authorization + Idempotency-Key headers</text>
+
+  <rect x="88" y="240" width="310" height="40" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="106" y="265" font-size="13" fill="#E2E8F0">Gateway verifies the JWT</text>
+
+  <rect x="88" y="300" width="310" height="40" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="106" y="325" font-size="13" fill="#E2E8F0">Gateway checks the rate limit</text>
+
+  <rect x="88" y="360" width="310" height="44" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="106" y="380" font-size="13" fill="#E2E8F0">Idempotency key claimed in Redis</text>
+  <text x="106" y="396" font-size="11" fill="#7C8AA5">first time through wins the claim</text>
+
+  <rect x="88" y="424" width="310" height="40" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="106" y="449" font-size="13" fill="#E2E8F0">Request body validated</text>
+
+  <rect x="88" y="484" width="310" height="44" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="106" y="504" font-size="13" fill="#E2E8F0">Price read from product-service</text>
+  <text x="106" y="520" font-size="11" fill="#7C8AA5">synchronous call — the total needs it</text>
+
+  <rect x="88" y="548" width="310" height="44" rx="9" fill="#182742" stroke="#818CF8" stroke-width="1.5"/>
+  <text x="106" y="568" font-size="13" fill="#E2E8F0">Order saved as PENDING</text>
+  <text x="106" y="584" font-size="11" fill="#A5B4FC">OrderCreated appended to the event store</text>
+
+  <rect x="88" y="612" width="310" height="40" rx="9" fill="#2A2008" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="106" y="637" font-size="13" fill="#FCD34D">ReserveInventory command published</text>
+
+  <rect x="88" y="672" width="310" height="48" rx="9" fill="#101B2E" stroke="#3B82F6" stroke-width="2"/>
+  <text x="106" y="694" font-size="14" font-weight="700" fill="#60A5FA">202 Accepted — status PENDING</text>
+  <text x="106" y="711" font-size="11" fill="#7C8AA5">nothing waits for the saga</text>
+
+  <text x="88" y="752" font-size="11.5" fill="#7C8AA5">Everything above happens in milliseconds. Any check that fails</text>
+  <text x="88" y="769" font-size="11.5" fill="#7C8AA5">stops the request here — no order is created.</text>
+
+  <!-- main downward arrows -->
+  <line x1="243" y1="220" x2="243" y2="236" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="243" y1="280" x2="243" y2="296" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="243" y1="340" x2="243" y2="356" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="243" y1="404" x2="243" y2="420" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="243" y1="464" x2="243" y2="480" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="243" y1="528" x2="243" y2="544" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="243" y1="592" x2="243" y2="608" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="243" y1="652" x2="243" y2="668" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- failure exits -->
+  <line x1="398" y1="260" x2="440" y2="260" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="446" y="244" width="250" height="32" rx="7" fill="#1F1214" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="462" y="265" font-size="11.5" fill="#F87171">401 — missing or invalid token</text>
+
+  <line x1="398" y1="320" x2="440" y2="320" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="446" y="304" width="250" height="32" rx="7" fill="#1F1214" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="462" y="325" font-size="11.5" fill="#F87171">429 — too many requests</text>
+
+  <line x1="398" y1="382" x2="440" y2="382" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="446" y="352" width="250" height="60" rx="7" fill="#1F1214" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="462" y="373" font-size="11.5" fill="#F87171">409 — same key still in flight</text>
+  <text x="462" y="396" font-size="11.5" fill="#F87171">202 — replay of the first response</text>
+
+  <line x1="398" y1="444" x2="440" y2="444" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="446" y="428" width="250" height="32" rx="7" fill="#1F1214" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="462" y="449" font-size="11.5" fill="#F87171">400 — validation failed</text>
+
+  <line x1="398" y1="506" x2="440" y2="506" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="446" y="476" width="250" height="60" rx="7" fill="#1F1214" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="462" y="497" font-size="11.5" fill="#F87171">404 — no such product</text>
+  <text x="462" y="520" font-size="11.5" fill="#F87171">502 — product-service unreachable</text>
+
+  <!-- ============ ASYNCHRONOUS LANE ============ -->
+  <rect x="760" y="126" width="780" height="668" rx="14" fill="#0F1A2E" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="784" y="156" font-size="14" font-weight="700" fill="#FCD34D" letter-spacing="0.5">ASYNCHRONOUS — the saga, after the response was sent</text>
+
+  <!-- happy path column -->
+  <rect x="788" y="180" width="330" height="46" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="806" y="201" font-size="13" fill="#E2E8F0">inventory-service reserves stock</text>
+  <text x="806" y="217" font-size="11" fill="#7C8AA5">its own local transaction</text>
+
+  <rect x="788" y="272" width="330" height="46" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="806" y="293" font-size="13" fill="#E2E8F0">Order moves to AWAITING_PAYMENT</text>
+  <text x="806" y="309" font-size="11" fill="#7C8AA5">saga sends ProcessPayment</text>
+
+  <rect x="788" y="364" width="330" height="46" rx="9" fill="#16233A" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="806" y="385" font-size="13" fill="#E2E8F0">payment-service charges the customer</text>
+  <text x="806" y="401" font-size="11" fill="#7C8AA5">3 retries, then the circuit breaker</text>
+
+  <rect x="788" y="456" width="330" height="50" rx="9" fill="#0E1F1A" stroke="#10B981" stroke-width="2"/>
+  <text x="806" y="479" font-size="14" font-weight="700" fill="#34D399">Order COMPLETED</text>
+  <text x="806" y="496" font-size="11" fill="#7C8AA5">OrderCompleted appended</text>
+
+  <line x1="953" y1="226" x2="953" y2="268" stroke="#10B981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="963" y="252" font-size="11" fill="#34D399">reserved</text>
+  <line x1="953" y1="318" x2="953" y2="360" stroke="#10B981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <line x1="953" y1="410" x2="953" y2="452" stroke="#10B981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="963" y="436" font-size="11" fill="#34D399">paid</text>
+
+  <!-- failure column -->
+  <line x1="1118" y1="203" x2="1176" y2="203" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="1182" y="180" width="330" height="46" rx="9" fill="#1F1214" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="1200" y="201" font-size="12.5" fill="#F87171">Not enough stock</text>
+  <text x="1200" y="217" font-size="11" fill="#7C8AA5">nothing was taken, so nothing to undo</text>
+
+  <line x1="1118" y1="387" x2="1176" y2="387" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="1182" y="364" width="330" height="46" rx="9" fill="#1F1214" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="1200" y="385" font-size="12.5" fill="#F87171">Charge failed or breaker open</text>
+  <text x="1200" y="401" font-size="11" fill="#7C8AA5">but stock is already reserved</text>
+
+  <rect x="1182" y="456" width="330" height="50" rx="9" fill="#2A2008" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="1200" y="477" font-size="12.5" font-weight="700" fill="#FCD34D">Compensation: stock released</text>
+  <text x="1200" y="494" font-size="11" fill="#B4915A">ReleaseInventory sent — the undo step</text>
+
+  <line x1="1347" y1="410" x2="1347" y2="452" stroke="#EF4444" stroke-width="2" marker-end="url(#arrowRed)"/>
+
+  <rect x="1182" y="556" width="330" height="50" rx="9" fill="#1F1214" stroke="#EF4444" stroke-width="2"/>
+  <text x="1200" y="579" font-size="14" font-weight="700" fill="#F87171">Order CANCELLED</text>
+  <text x="1200" y="596" font-size="11" fill="#7C8AA5">OrderCancelled appended, with the reason</text>
+
+  <line x1="1347" y1="506" x2="1347" y2="552" stroke="#EF4444" stroke-width="2" marker-end="url(#arrowRed)"/>
+  <path d="M 1347 226 C 1530 226 1530 520 1520 556" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowRed)"/>
+
+  <!-- timeout -->
+  <rect x="788" y="636" width="724" height="76" rx="9" fill="#16233A" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="806" y="660" font-size="12.5" font-weight="700" fill="#FCD34D">If no reply ever arrives</text>
+  <text x="806" y="681" font-size="11.5" fill="#CBD5E1">A sweep runs every 30 seconds. Orders stuck for more than 10 minutes have their</text>
+  <text x="806" y="699" font-size="11.5" fill="#CBD5E1">stock released and are cancelled — otherwise a stalled saga would wait forever.</text>
+
+  <text x="788" y="736" font-size="11.5" fill="#7C8AA5">Each step is a local transaction in its own service. There is no shared transaction to roll back, so a failure</text>
+  <text x="788" y="753" font-size="11.5" fill="#7C8AA5">after a successful step is undone by doing the opposite, not by rewinding.</text>
+
+  <!-- sync -> async handoff: routed below the error chips, then up the gap between lanes -->
+  <path d="M 398 632 C 560 632 640 634 706 606 C 744 578 740 250 782 206"
+        fill="none" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+  <text x="452" y="622" font-size="11.5" fill="#B4915A">command over Kafka</text>
+
+  <!-- ============ BOTTOM: SIDE EFFECTS ============ -->
+  <rect x="60" y="826" width="1480" height="220" rx="14" fill="#111C30" stroke="#2E4468" stroke-width="1.5"/>
+  <text x="84" y="858" font-size="16" font-weight="700" fill="#FFFFFF">What happens on every state change</text>
+
+  <rect x="88" y="880" width="300" height="72" rx="9" fill="#182742" stroke="#818CF8" stroke-width="1.5"/>
+  <text x="106" y="906" font-size="12.5" fill="#E2E8F0">Appended to the event store</text>
+  <text x="106" y="925" font-size="11" fill="#7C8AA5">Created, Completed or Cancelled —</text>
+  <text x="106" y="941" font-size="11" fill="#7C8AA5">the order's history, never updated</text>
+
+  <line x1="388" y1="916" x2="436" y2="916" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrowAmber)"/>
+
+  <rect x="442" y="880" width="280" height="72" rx="9" fill="#2A2008" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="460" y="906" font-size="12.5" fill="#FCD34D">Published to order.events</text>
+  <text x="460" y="925" font-size="11" fill="#B4915A">read by anyone who subscribes,</text>
+  <text x="460" y="941" font-size="11" fill="#B4915A">each at their own pace</text>
+
+  <line x1="722" y1="900" x2="778" y2="892" stroke="#10B981" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowGreen)"/>
+  <line x1="722" y1="932" x2="778" y2="940" stroke="#10B981" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowGreen)"/>
+
+  <rect x="784" y="866" width="330" height="52" rx="9" fill="#16233A" stroke="#10B981" stroke-width="1.5"/>
+  <text x="802" y="888" font-size="12.5" fill="#E2E8F0">Read model updated</text>
+  <text x="802" y="906" font-size="11" fill="#7C8AA5">this is what GET /orders/{id} returns</text>
+
+  <rect x="784" y="928" width="330" height="52" rx="9" fill="#16233A" stroke="#10B981" stroke-width="1.5"/>
+  <text x="802" y="950" font-size="12.5" fill="#E2E8F0">Customer notified</text>
+  <text x="802" y="968" font-size="11" fill="#7C8AA5">email, plus SMS if the order was cancelled</text>
+
+  <rect x="1150" y="866" width="366" height="114" rx="9" fill="#101B2E" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="1170" y="892" font-size="12.5" font-weight="700" fill="#60A5FA">What the client sees</text>
+  <text x="1170" y="914" font-size="11.5" fill="#CBD5E1">202 with PENDING, immediately.</text>
+  <text x="1170" y="934" font-size="11.5" fill="#CBD5E1">Then polls GET /api/v1/orders/{id}</text>
+  <text x="1170" y="954" font-size="11.5" fill="#CBD5E1">until it reads COMPLETED or CANCELLED.</text>
+  <text x="1170" y="972" font-size="10.5" fill="#7C8AA5">briefly stale — the read model lags the write</text>
+
+  <!-- footer -->
+  <text x="70" y="1086" font-size="12.5" fill="#526079">ShopFlow — order-service. Three ways to be cancelled: no stock, payment failure with compensation, or a saga that timed out.</text>
+</svg>
