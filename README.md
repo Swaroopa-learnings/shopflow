@@ -11,6 +11,13 @@ from those events.
 
 ![Architecture](docs/shopflow-architecture.png)
 
+> **How this was built.** Most of this code was generated with AI assistance
+> (Claude, Codex) from requirements and an architecture I defined. I have not
+> yet reviewed all of it line by line. So far I have run the system, found and
+> fixed three defects ([review log](docs/review-log.md)), and refactored the
+> Kafka listeners. Treat everything else as unreviewed, and see
+> [Known gaps](#known-gaps).
+
 ---
 
 ## Services
